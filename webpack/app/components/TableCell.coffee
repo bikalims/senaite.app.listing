@@ -5,6 +5,7 @@ import HiddenField from "./HiddenField.coffee"
 import MultiChoice from "./MultiChoice.coffee"
 import MultiSelect from "./MultiSelect.coffee"
 import MultiValue from "./MultiValue.coffee"
+import LuthandoMultiValue from "./LuthandoMultiValue.coffee"
 import NumericField from "./NumericField.coffee"
 import CalculatedField from "./CalculatedField.coffee"
 import ReadonlyField from "./ReadonlyField.coffee"
@@ -28,6 +29,7 @@ class TableCell extends React.Component
       "multiselect": ":list"
       "multichoice": ":list"
       "multivalue": ":list"
+      "luthandomultivalue": ":list"
       "numeric": ":records"
       "fraction": ":records"
       "string": ":records"
@@ -908,6 +910,62 @@ class TableCell extends React.Component
         />)
 
   ###*
+   * Creates a luthandomultivalue field component
+   *
+   * The passed in `props` allow to override required values
+   *
+   * @param props {object} properties passed to the component
+   * @returns MultiValue component
+  ###
+  create_luthandomultivalue_field: ({props}={}) ->
+    props ?= {}
+
+    column_key = props.column_key or @get_column_key()
+    item = props.item or @get_item()
+    name = props.name or @get_name()
+    value = props.value or @get_value()
+    formatted_value = props.formatted_value or @get_formatted_value()
+    uid = props.uid or @get_uid()
+    title = props.title or @props.column.title or column_key
+
+    column = props.column or @get_column()
+    item.help ?= {}
+    help = props.help or item.help[column_key] or column.help
+
+    converter = @ZPUBLISHER_CONVERTER["luthandomultivalue"]
+    fieldname = name + converter
+
+    selected = props.selected or @is_selected()
+    disabled = props.disabled or @is_disabled()
+    required = props.required or @is_required()
+    size = props.size or @get_size()
+    css_class = props.css_class or "form-control form-control-sm"
+    if required then css_class += " required"
+
+    return (
+      <LuthandoMultiValue
+        key={name}
+        uid={uid}
+        item={item}
+        name={fieldname}
+        defaultValue={value}
+        value={value}
+        column_key={column_key}
+        title={title}
+        help={help}
+        disabled={disabled}
+        selected={selected}
+        required={required}
+        className={css_class}
+        update_editable_field={@props.update_editable_field}
+        save_editable_field={@props.save_editable_field}
+        tabIndex={@props.tabIndex}
+        size={size}
+        {...props}
+        />)
+
+
+  ###*
    * Creates a checkbox field component
    *
    * The passed in `props` allow to override required values
@@ -987,6 +1045,8 @@ class TableCell extends React.Component
       field = field.concat @create_multichoice_field()
     else if type in ["multiselect", "multiselect_duplicates"]
       field = field.concat @create_multiselect_field()
+    else if type in ["luthandomultivalue"]
+      field = field.concat @create_luthandomultivalue_field()
     else if type in ["multivalue"]
       field = field.concat @create_multivalue_field()
     else if type == "boolean"
