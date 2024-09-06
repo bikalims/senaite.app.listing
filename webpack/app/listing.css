@@ -283,3 +283,6 @@ selected elements from multiselect
 .time-series-table tr {
   padding: 0;
 }
+.time-series-table input {
+  width: fit_content;
+}

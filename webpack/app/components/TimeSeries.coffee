@@ -82,13 +82,7 @@ class TimeSeries extends React.Component
             row.push("")
         result.push(row)
       return result
-    debugger;
-    console.log "TimeSeries::to_matrix: WTF?"
-    parsed = JSON.parse value
-    if not Array.isArray(parsed)
-      # This might happen when a default value is set, e.g. 0
-      return [parsed]
-    return parsed
+    console.log "TimeSeries::to_matrix: WE SHOULD NEVER GET HERE!!!!"
 
   ###
    * Inputs table builder. Generates a table of  inputs as matrix
@@ -106,12 +100,12 @@ class TimeSeries extends React.Component
 
     # create header row
     th_inputs = []
-    headers = ['Index', 'Sample1', 'Sample2', 'Sample3', 'Ave']
+    headers = @props.item.time_series_columns
     for head in headers
       th_inputs.push(
         <th>
           <input type="text"
-                 size={@props.size or 5}
+                 # size={@props.size or 5}
                  value={head}
                  uid={@props.uid}
                  name={@props.name}
@@ -139,7 +133,7 @@ class TimeSeries extends React.Component
         td_inputs.push(
           <td>
             <input type="text"
-                   size={@props.size or 5}
+                   # size={@props.size or 5}
                    value={item}
                    uid={@props.uid}
                    name={@props.name}
