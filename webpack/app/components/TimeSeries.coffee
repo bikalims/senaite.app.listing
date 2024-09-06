@@ -73,10 +73,11 @@ class TimeSeries extends React.Component
     if not value
       return []
     if Array.isArray(value)
+      header_len = @props.item.time_series_columns.length
       result = []
       for row in value
         len = row.length
-        rem = 5 - len
+        rem = header_len - len
         if rem > 0
           for i in [1..rem]
             row.push("")
