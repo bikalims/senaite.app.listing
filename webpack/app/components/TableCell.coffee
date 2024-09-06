@@ -5,11 +5,13 @@ import HiddenField from "./HiddenField.coffee"
 import MultiChoice from "./MultiChoice.coffee"
 import MultiSelect from "./MultiSelect.coffee"
 import MultiValue from "./MultiValue.coffee"
+import TimeSeries from "./TimeSeries.coffee"
 import NumericField from "./NumericField.coffee"
 import CalculatedField from "./CalculatedField.coffee"
 import ReadonlyField from "./ReadonlyField.coffee"
 import Select from "./Select.coffee"
 import StringField from "./StringField.coffee"
+import TextField from "./TextField.coffee"
 import FractionField from "./FractionField.coffee"
 import DateTime from "./DateTime.coffee"
 
@@ -27,9 +29,11 @@ class TableCell extends React.Component
       "multiselect": ":list"
       "multichoice": ":list"
       "multivalue": ":list"
+      "timeseries": ":list"
       "numeric": ":records"
       "fraction": ":records"
       "string": ":records"
+      "text": "records"
       "datetime": ":records"
       "readonly": ""
       "default": ":records"
@@ -149,6 +153,7 @@ class TableCell extends React.Component
     default_size = 5
     types_size =
       "string": 30,
+      "text": 30,
 
     item = @get_item()
     column_key = @get_column_key()
@@ -493,6 +498,62 @@ class TableCell extends React.Component
         />)
 
   ###*
+   * Creates a text field component
+   *
+   * The passed in `props` allow to override required values
+   *
+   * @param props {object} properties passed to the component
+   * @returns TextField component
+  ###
+  create_text_field: ({props}={}) ->
+    props ?= {}
+
+    column_key = props.column_key or @get_column_key()
+    item = props.item or @get_item()
+    name = props.name or @get_name()
+    value = props.value or @get_value()
+    formatted_value = props.formatted_value or @get_formatted_value()
+    uid = props.uid or @get_uid()
+    title = props.title or @props.column.title or column_key
+
+    column = props.column or @get_column()
+    item.help ?= {}
+    help = props.help or item.help[column_key] or column.help
+
+    converter = @ZPUBLISHER_CONVERTER["text"]
+    fieldname = name + converter
+
+    selected = props.selected or @is_selected()
+    disabled = props.disabled or @is_disabled()
+    required = props.required or @is_required()
+    size = props.size or @get_size()
+    css_class = props.css_class or "form-control form-control-sm"
+    if required then css_class += " required"
+
+    return (
+      <TextField
+        key={name}
+        uid={uid}
+        item={item}
+        name={fieldname}
+        defaultValue={value}
+        column_key={column_key}
+        title={title}
+        help={help}
+        formatted_value={formatted_value}
+        placeholder={title}
+        selected={selected}
+        disabled={disabled}
+        required={required}
+        className={css_class}
+        update_editable_field={@props.update_editable_field}
+        save_editable_field={@props.save_editable_field}
+        tabIndex={@props.tabIndex}
+        size={size}
+        {...props}
+        />)
+
+  ###*
    * Creates a fraction field component
    *
    * The passed in `props` allow to override required values
@@ -563,6 +624,7 @@ class TableCell extends React.Component
     item = props.item or @get_item()
     name = props.name or @get_name()
     value = props.value or @get_value()
+    type = props.type or @get_type()
     formatted_value = props.formatted_value or @get_formatted_value()
     uid = props.uid or @get_uid()
     title = props.title or @props.column.title or column_key
@@ -613,6 +675,7 @@ class TableCell extends React.Component
         save_editable_field={@props.save_editable_field}
         tabIndex={@props.tabIndex}
         size={size}
+        type={type}
         min_date={min_date}
         max_date={max_date}
         min_time={min_time}
@@ -847,6 +910,62 @@ class TableCell extends React.Component
         />)
 
   ###*
+   * Creates a timeseries field component
+   *
+   * The passed in `props` allow to override required values
+   *
+   * @param props {object} properties passed to the component
+   * @returns MultiValue component
+  ###
+  create_timeseries_field: ({props}={}) ->
+    props ?= {}
+
+    column_key = props.column_key or @get_column_key()
+    item = props.item or @get_item()
+    name = props.name or @get_name()
+    value = props.value or @get_value()
+    formatted_value = props.formatted_value or @get_formatted_value()
+    uid = props.uid or @get_uid()
+    title = props.title or @props.column.title or column_key
+
+    column = props.column or @get_column()
+    item.help ?= {}
+    help = props.help or item.help[column_key] or column.help
+
+    converter = @ZPUBLISHER_CONVERTER["timeseries"]
+    fieldname = name + converter
+
+    selected = props.selected or @is_selected()
+    disabled = props.disabled or @is_disabled()
+    required = props.required or @is_required()
+    size = props.size or @get_size()
+    css_class = props.css_class or "form-control form-control-sm"
+    if required then css_class += " required"
+
+    return (
+      <TimeSeries
+        key={name}
+        uid={uid}
+        item={item}
+        name={fieldname}
+        defaultValue={value}
+        value={value}
+        column_key={column_key}
+        title={title}
+        help={help}
+        disabled={disabled}
+        selected={selected}
+        required={required}
+        className={css_class}
+        update_editable_field={@props.update_editable_field}
+        save_editable_field={@props.save_editable_field}
+        tabIndex={@props.tabIndex}
+        size={size}
+        {...props}
+        />)
+
+
+  ###*
    * Creates a checkbox field component
    *
    * The passed in `props` allow to override required values
@@ -926,6 +1045,8 @@ class TableCell extends React.Component
       field = field.concat @create_multichoice_field()
     else if type in ["multiselect", "multiselect_duplicates"]
       field = field.concat @create_multiselect_field()
+    else if type in ["timeseries"]
+      field = field.concat @create_timeseries_field()
     else if type in ["multivalue"]
       field = field.concat @create_multivalue_field()
     else if type == "boolean"
@@ -934,7 +1055,9 @@ class TableCell extends React.Component
       field = field.concat @create_numeric_field()
     else if type == "string"
       field = field.concat @create_string_field()
-    else if type == "datetime"
+    else if type == "text"
+      field = field.concat @create_text_field()
+    else if type in ["date", "datetime"]
       field = field.concat @create_datetime_field()
     else if type == "fraction"
       field = field.concat @create_fraction_field()
