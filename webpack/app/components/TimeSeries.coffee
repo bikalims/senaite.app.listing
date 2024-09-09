@@ -83,7 +83,15 @@ class TimeSeries extends React.Component
             row.push("")
         result.push(row)
       return result
+    if typeof value is 'string'
+      # A string value with a list of lists
+      parsed = JSON.parse value
+      if not Array.isArray(parsed)
+        # This might happen when a default value is set, e.g. 0
+        return [parsed]
+      return parsed
     console.log "TimeSeries::to_matrix: WE SHOULD NEVER GET HERE!!!!"
+
 
   ###
    * Inputs table builder. Generates a table of  inputs as matrix
