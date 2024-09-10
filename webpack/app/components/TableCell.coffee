@@ -220,6 +220,14 @@ class TableCell extends React.Component
       formatted_value = item.formatted_result or formatted_value
     return formatted_value
 
+  is_readonly_timeseries: ->
+    item = @get_item()
+    console.log item.formatted_value
+    if typeof(item.formatted_value) == 'object'
+      if item.formatted_value.TimeSeriesValues
+        return true
+    return false
+
   get_type: ->
     column_key = @get_column_key()
     item = @get_item()
@@ -227,6 +235,10 @@ class TableCell extends React.Component
     # true if the field is editable
     editable = @is_edit_allowed()
     resultfield = @is_result_column()
+
+    # timeseries field
+    if column_key == "Result" and @is_readonly_timeseries
+      return "timeseries_readonly"
 
     # readonly field
     if not editable
@@ -924,7 +936,10 @@ class TableCell extends React.Component
     item = props.item or @get_item()
     name = props.name or @get_name()
     value = props.value or @get_value()
-    formatted_value = props.formatted_value or @get_formatted_value()
+    if @is_readonly_timeseries
+      formatted_value = item.formatted_result
+    else
+      formatted_value = props.formatted_value or @get_formatted_value()
     uid = props.uid or @get_uid()
     title = props.title or @props.column.title or column_key
 
@@ -949,7 +964,7 @@ class TableCell extends React.Component
         item={item}
         name={fieldname}
         defaultValue={value}
-        value={value}
+        value={formatted_value}
         column_key={column_key}
         title={title}
         help={help}
@@ -1045,7 +1060,7 @@ class TableCell extends React.Component
       field = field.concat @create_multichoice_field()
     else if type in ["multiselect", "multiselect_duplicates"]
       field = field.concat @create_multiselect_field()
-    else if type in ["timeseries"]
+    else if type in ["timeseries", "timeseries_readonly"]
       field = field.concat @create_timeseries_field()
     else if type in ["multivalue"]
       field = field.concat @create_multivalue_field()
