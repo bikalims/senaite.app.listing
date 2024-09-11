@@ -222,9 +222,9 @@ class TableCell extends React.Component
 
   is_readonly_timeseries: ->
     item = @get_item()
-    console.log item.formatted_value
-    if typeof(item.formatted_value) == 'object'
-      if item.formatted_value.TimeSeriesValues
+    console.debug item.formatted_result
+    if typeof(item.formatted_result) == 'object'
+      if item.formatted_result.TimeSeriesValues
         return true
     return false
 
@@ -237,7 +237,7 @@ class TableCell extends React.Component
     resultfield = @is_result_column()
 
     # timeseries field
-    if column_key == "Result" and @is_readonly_timeseries
+    if resultfield and @is_readonly_timeseries()
       return "timeseries_readonly"
 
     # readonly field

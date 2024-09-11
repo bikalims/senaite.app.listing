@@ -96,10 +96,10 @@ class TimeSeries extends React.Component
    * Inputs table builder. Generates a table of  inputs as matrix
   ###
   build_rows: ->
-    if this.props.item.formatted_result
-      return @build_readonly_row()
-    else
+    if this.props.item.result_type
       return @build_edit_rows()
+    else
+      return @build_readonly_row()
 
 
   ###
