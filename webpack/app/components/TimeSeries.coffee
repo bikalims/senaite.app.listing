@@ -91,93 +91,10 @@ class TimeSeries extends React.Component
       return parsed
     console.log "TimeSeries::to_matrix: WE SHOULD NEVER GET HERE!!!!"
 
-
   ###
    * Inputs table builder. Generates a table of  inputs as matrix
   ###
   build_rows: ->
-    if this.props.item.result_type
-      return @build_edit_rows()
-    else
-      return @build_readonly_row()
-
-
-  ###
-   * Inputs table builder. Generates a table of readonly inputs as matrix
-  ###
-  build_readonly_row: ->
-    # Convert the result to a matrix of rows
-    header_len = @props.item.formatted_result.Headers.length
-    values = this.props.item.formatted_result.TimeSeriesValues
-    matrix = @to_matrix(values, header_len)
-    console.debug "TimeSeries::build_rows: matrix ='#{matrix}'"
-
-    # Add an empty row at the end
-    matrix.push(["", "", "", "", ""])
-
-    # Build the rows
-    output = []
-
-    # create header row
-    th_inputs = []
-    headers = @props.item.formatted_result.Headers
-    for head in headers
-      th_inputs.push(
-        <th>
-          <input type="text"
-                 # size={@props.size or 5}
-                 value={head}
-                 uid={@props.uid}
-                 name={@props.name}
-                 title={@props.help or @props.title}
-                 onChange={@props.onChange or @on_change}
-                 column_key={@props.column_key}
-                 className={@props.className}
-                 readonly="readonly"
-                 {...@props.attrs} />
-        </th>
-      )
-    output.push(
-      <tr>
-        {th_inputs}
-      </tr>
-    )
-    # Create rows on inputs
-    cnt = 0
-    for row in matrix
-      cnt += 1
-      console.log "TimeSeries::build_rows: #{cnt}: value=#{row}"
-      # Create list of TDs
-      td_inputs = []
-      for item in row
-        td_inputs.push(
-          <td>
-            <input type="text"
-                   # size={@props.size or 5}
-                   value={item}
-                   uid={@props.uid}
-                   name={@props.name}
-                   title={@props.help or @props.title}
-                   onChange={@props.onChange or @on_change}
-                   column_key={@props.column_key}
-                   className={@props.className}
-                   readonly="readonly"
-                   {...@props.attrs} />
-          </td>
-        )
-      # Add row to output
-      output.push(
-        <tr>
-          {td_inputs}
-        </tr>
-      )
-
-    return output
-
-  ###
-   * Inputs table builder. Generates a table of  inputs as matrix
-  ###
-  build_edit_rows: ->
     # Convert the result to a matrix of rows
     header_len = @props.item.time_series_columns.length
     values = @state.value
@@ -218,24 +135,40 @@ class TimeSeries extends React.Component
     cnt = 0
     for row in matrix
       cnt += 1
-      console.log "TimeSeries::build_rows: #{cnt}: value=#{row}"
       # Create list of TDs
       td_inputs = []
       for item in row
-        td_inputs.push(
-          <td>
-            <input type="text"
-                   # size={@props.size or 5}
-                   value={item}
-                   uid={@props.uid}
-                   name={@props.name}
-                   title={@props.help or @props.title}
-                   onChange={@props.onChange or @on_change}
-                   column_key={@props.column_key}
-                   className={@props.className}
-                   {...@props.attrs} />
-          </td>
-        )
+        if this.props.item.result_type == "timeseries_readonly"
+          console.log "TimeSeries::build_rows: READONLY #{cnt}: value=#{row}"
+          td_inputs.push(
+            <td>
+              <input type="text"
+                     # size={@props.size or 5}
+                     value={item}
+                     uid={@props.uid}
+                     name={@props.name}
+                     title={@props.help or @props.title}
+                     onChange={@props.onChange or @on_change}
+                     column_key={@props.column_key}
+                     className={@props.className}
+                     readonly="false"
+                     {...@props.attrs} />
+            </td>)
+        else
+          console.log "TimeSeries::build_rows: EDITABLE #{cnt}: value=#{row}"
+          td_inputs.push(
+            <td>
+              <input type="text"
+                     # size={@props.size or 5}
+                     value={item}
+                     uid={@props.uid}
+                     name={@props.name}
+                     title={@props.help or @props.title}
+                     onChange={@props.onChange or @on_change}
+                     column_key={@props.column_key}
+                     className={@props.className}
+                     {...@props.attrs} />
+            </td>)
       # Add row to output
       output.push(
         <tr>
