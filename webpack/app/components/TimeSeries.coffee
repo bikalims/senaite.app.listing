@@ -335,7 +335,34 @@ class TimeSeries extends React.Component
         .attr('transform', "translate(0, #{height})")
         .call(xAxis)
 
-      chartGroup.append('g').attr('class', 'y axis').call(yAxis)
+      chartGroup.append('text')
+        .attr('class', 'x-axis-title')
+        .attr('x', margin.left + width / 3)
+        .attr('y', height + margin.top + margin.bottom - 30)
+        .style('text-anchor', 'middle')
+        .text(@props.item.time_series_graph_xaxis)
+
+      chartGroup.append('g')
+        .attr('class', 'y axis')
+        .call(yAxis)
+
+      chartGroup.append('text')
+        .attr('class', 'y-axis-title')
+        .attr('x', - (height / 2) - margin.top)
+        .attr('y', -40)
+        .attr('transform', 'rotate(-90)')
+        .style('text-anchor', 'middle')
+        .text(@props.item.time_series_graph_yaxis)
+
+      # Add a title for the entire graph
+      chartGroup.append('text')
+        .attr('class', 'graph-title')
+        .attr('x', margin.left + width / 2)
+        .attr('y', margin.top / 2)
+        .style('text-anchor', 'middle')
+        .style('font-size', '18px')
+        .style('font-weight', 'bold')
+        .text(@props.item.time_series_graph_title)
 
       # Create line generator
       line = d3.line()
@@ -377,6 +404,7 @@ class TimeSeries extends React.Component
         .enter().append('g')
         .attr('class', 'legend')
         .attr('transform', (d, i) -> 'translate(0,' + (i * 20) + ')')  # Adjust vertical spacing
+
 
       # Append color rectangles for legend
       legend.append('rect')
