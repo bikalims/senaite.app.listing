@@ -137,12 +137,13 @@ class TimeSeries extends React.Component
   build_rows: ->
     # Convert the result to a matrix of rows
     header_len = @props.item.time_series_columns.length
+    console.log('build_rows: header len=' + header_len);
     values = @state.value
     matrix = @to_matrix(values, header_len)
     console.debug "TimeSeries::build_rows: matrix ='#{matrix}'"
 
     # Add an empty row at the end
-    matrix.push(["", "", "", "", ""])
+    matrix.push(Array(header_len).fill(""));
 
     # Build the rows
     output = []
