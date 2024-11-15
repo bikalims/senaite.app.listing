@@ -23,10 +23,6 @@ class TimeSeries extends React.Component
 
     @svgRef = React.createRef()
 
-  componentDidMount: ->
-    # D3 can only be used after the component has mounted, ensuring the DOM is available
-    @build_graph()
-
   ###*
    * Event handler when the value changed of the field
    * Extract all values in the matrix and store
@@ -73,8 +69,36 @@ class TimeSeries extends React.Component
 
     colors = ['steelblue', 'orange', 'green']
 
+
+  componentDidMount: ->
+    # D3 can only be used after the component has mounted, ensuring the DOM is available
+    @build_graph()
+
   generateRandomColor: ->
     "#" + Math.floor(Math.random() * 16777215).toString(16)
+
+  ###
+   * Converts the string value to an array
+  ###
+  to_matrix: (listString, headers) ->
+    # Parse the string version of the list of lists into an array
+    list = JSON.parse(listString)
+
+    # Map each inner list to an object using the headers
+    matrix = list.map (innerList) ->
+        obj = {}
+        headers.forEach (header, index) ->
+            obj[header] = innerList[index]
+        obj
+
+    matrix.map (row) ->
+        headers.forEach (header, index) ->
+            if index = 0
+              row[header] = row[header]
+            else
+              row[header] = parseFloat(row[header])
+    matrix
+
 
   ###
    * Converts the string value to an array
@@ -106,51 +130,22 @@ class TimeSeries extends React.Component
     return datasets
 
   ###
-   * Converts the string value to an array
-  ###
-  to_matrix: (value, header_len) ->
-    console.debug "TimeSeries::to_matrix:value=#{value}"
-    if not value
-      return []
-    if Array.isArray(value)
-      result = []
-      for row in value
-        len = row.length
-        rem = header_len - len
-        if rem > 0
-          for i in [1..rem]
-            row.push("")
-        result.push(row)
-      return result
-    if typeof value is 'string'
-      # A string value with a list of lists
-      parsed = JSON.parse value
-      if not Array.isArray(parsed)
-        # This might happen when a default value is set, e.g. 0
-        return [parsed]
-      return parsed
-    console.log "TimeSeries::to_matrix: WE SHOULD NEVER GET HERE!!!!"
-
-  ###
    * Inputs table builder. Generates a table of  inputs as matrix
   ###
   build_rows: ->
     # Convert the result to a matrix of rows
-    header_len = @props.item.time_series_columns.length
+    headers = @props.item.time_series_columns
+    header_len = headers.length
     console.log('build_rows: header len=' + header_len);
     values = @state.value
-    matrix = @to_matrix(values, header_len)
-    console.debug "TimeSeries::build_rows: matrix ='#{matrix}'"
+    matrix = @to_matrix(values, headers)
 
-    # Add an empty row at the end
-    matrix.push(Array(header_len).fill(""));
 
     # Build the rows
     output = []
 
     # create header row
     th_inputs = []
-    headers = @props.item.time_series_columns
     for head in headers
       th_inputs.push(
         <th>
@@ -181,15 +176,15 @@ class TimeSeries extends React.Component
       cnt += 1
       # Create list of TDs
       td_inputs = []
-      for item in row
+      for key, val of row
         # if this.props.item.result_type == "timeseries_readonly"
-        if true  # HACK
-          console.log "TimeSeries::build_rows: READONLY #{cnt}: value=#{item}"
+        if true  # HACKED READ-WRITE now
+          # console.log "TimeSeries::build_rows: READONLY #{cnt}: value=#{val}"
           td_inputs.push(
             <td>
               <input type="text"
                      # size={@props.size or 5}
-                     value={item}
+                     value={val}
                      uid={@props.uid}
                      name={@props.name}
                      title={@props.help or @props.title}
@@ -200,12 +195,12 @@ class TimeSeries extends React.Component
                      {...@props.attrs} />
             </td>)
         else
-          console.log "TimeSeries::build_rows: EDITABLE #{cnt}: value=#{row}"
+          # console.log "TimeSeries::build_rows: EDITABLE #{cnt}: value=#{row}"
           td_inputs.push(
             <td>
               <input type="text"
                      # size={@props.size or 5}
-                     value={item}
+                     value={val}
                      uid={@props.uid}
                      name={@props.name}
                      title={@props.help or @props.title}
@@ -227,6 +222,7 @@ class TimeSeries extends React.Component
       </tbody>
     )
 
+    console.log('build_rows: done')
     return output
 
   ###
@@ -258,18 +254,29 @@ class TimeSeries extends React.Component
 
 
   ###
+   * find max value of matrix
+  ###
+  find_xaxis_max: (matrix) ->
+    max = 0
+    for row in matrix
+      for key, val of row
+        if val > max
+          max = val
+
+    max = max + 0.25
+
+  ###
    * find min and max values of matrix
   ###
-  find_yaxis_min_max: (values) ->
-    matrix = @parseMatrixString(values)
+  find_yaxis_min_max: (matrix) ->
     min = 0
     max = 0
     for row in matrix
-      for num in row[1..]
-        if num < min
-          min = num
-        if num > max
-          max = num
+      for key, val of row
+        if val > max
+          max = val
+        if val < min
+          min = val
 
     min = min - 0.25
     max = max + 0.25
@@ -282,9 +289,10 @@ class TimeSeries extends React.Component
    * Inputs table builder. Generates a table of  inputs as matrix
   ###
   build_graph: ->
+    console.log "TimeSeries::build_graph: entered"
     if @svgRef?.current
 
-      console.log "TimeSeries::build_graph: entered"
+      console.log "TimeSeries::build_graph: is current"
       values = @state.value
 
       if values == ""
@@ -293,134 +301,171 @@ class TimeSeries extends React.Component
         return
 
       # Get datasets
-      header_len = @props.item.time_series_columns.length
-      datasets = @to_graph_data(values, header_len)
+      headers = @props.item.time_series_columns
+      index = headers[0]
+      data = @to_matrix(values, headers)
 
-      # Chart dimensions
-      width = 500
-      height = 300
-      margin = {top: 20, right: 150, bottom: 50, left: 50}  # Extra space on right for legend and bottom for axis
+      # Set up dimensions
+      margin = {top: 40, right: 80, bottom: 50, left: 60}
+      width = 800 - margin.left - margin.right
+      height = 400 - margin.top - margin.bottom + 50
 
-      # Scales
-      xMax = d3.max(datasets, (dataset) -> d3.max(dataset.data, (d) -> d.x)) + 0.1
-      xScale = d3.scaleLinear()
-        .domain([0.9, xMax])
+      # Set up scales
+      x = d3.scaleLinear()
+        .domain(d3.extent(data, (d) -> parseFloat(d[index])))
         .range([0, width])
 
-      ySize = @find_yaxis_min_max(values)
-      console.log "TimeSeries::build_graph: ySize: #{ySize.min} #{ySize.max}"
-      yScale = d3.scaleLinear()
-        .domain([ySize.min, ySize.max])
+      # Set up Y scale with trimmed domain
+      minY = d3.min(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header])))) - 20
+      maxY = d3.max(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
+
+      y = d3.scaleLinear()
+        .domain([Math.floor(minY), Math.ceil(maxY)])  # Trim domain to just cover data range
         .range([height, 0])
 
+      # Set up colors
+      color = d3.scaleOrdinal(d3.schemeCategory10).domain(headers.slice(1))
+
+      # Line generator
+      line = d3.line()
+        .x((d) ->
+          console.debug("Mapping X:", d.index, "to", x(d.index))
+          x(d.index)
+        )
+        .y((d) ->
+          console.debug("Mapping Y:", d.value, "to", y(d.value))
+          y(d.value)
+        )
+
+      # Create SVG container
       svg = d3.select(@svgRef.current)
+        .style("height", "#{height+120}px")
 
       # Remove any previous SVG content
       svg.selectAll('*').remove()
 
-      # Append a group element for margins
-      chartGroup = svg
-        .attr('width', width + margin.left + margin.right)
-        .attr('height', height + margin.top + margin.bottom)
-        .append('g')
-        .attr('transform', "translate(#{margin.left}, #{margin.top})")
+      svg = svg
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(#{margin.left},#{margin.top})")
 
-      # Define and append X and Y axes
-      xAxis = d3.axisBottom(xScale)
-        .tickValues([1, 2, 3])  # Set specific ticks on the x-axis
-        .tickFormat(d3.format('d'))  # Format tick values as integers (no decimals)
-      yAxis = d3.axisLeft(yScale)
-
-      chartGroup.append('g')
-        .attr('class', 'x axis')
-        .attr('transform', "translate(0, #{height})")
-        .call(xAxis)
-
-      chartGroup.append('text')
-        .attr('class', 'x-axis-title')
-        .attr('x', margin.left + width / 3)
-        .attr('y', height + margin.top + margin.bottom - 30)
-        .style('text-anchor', 'middle')
-        .text(@props.item.time_series_graph_xaxis)
-
-      chartGroup.append('g')
-        .attr('class', 'y axis')
-        .call(yAxis)
-
-      chartGroup.append('text')
-        .attr('class', 'y-axis-title')
-        .attr('x', - (height / 2) - margin.top)
-        .attr('y', -40)
-        .attr('transform', 'rotate(-90)')
-        .style('text-anchor', 'middle')
-        .text(@props.item.time_series_graph_yaxis)
-
-      # Add a title for the entire graph
-      chartGroup.append('text')
-        .attr('class', 'graph-title')
-        .attr('x', margin.left + width / 2)
-        .attr('y', margin.top / 2)
-        .style('text-anchor', 'middle')
-        .style('font-size', '18px')
-        .style('font-weight', 'bold')
+      # Graph title
+      svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", -margin.top / 2)
+        .attr("text-anchor", "middle")
+        .style("font-size", "16px")
+        .style("font-weight", "bold")
         .text(@props.item.time_series_graph_title)
 
-      # Create line generator
-      line = d3.line()
-        .x((d) -> x(d.x))
-        .y((d) -> y(d.y))
+      # X-axis
+      svg.append("g")
+        .attr("transform", "translate(0,#{height})")
+        .call(d3.axisBottom(x))
 
-      # Plot each dataset
-      datasets.forEach (dataset) ->
-        datasetClass = dataset.name.replace(/\s+/g, '_') # Replace spaces with underscores
+      # X-axis label
+      svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", height + margin.bottom - 10)
+        .attr("text-anchor", "middle")
+        .style("font-size", "12px")
+        .text(@props.item.time_series_graph_xaxis)
 
-        # Define the line generator function
-        lineGenerator = d3.line()
-            .x((d) -> xScale(d.x))  # Use x value from the data
-            .y((d) -> yScale(d.y))  # Use y value from the data
+      # Y-axis
+      svg.append("g")
+        .call(d3.axisLeft(y))
 
-        # Add lines for each dataset
-        datasets.forEach (dataset) ->
-            chartGroup.append('path')
-                .datum(dataset.data)
-                .attr('class', 'line')
-                .attr('fill', 'none')
-                .attr('stroke', dataset.color)
-                .attr('stroke-width', 2)
-                .attr('d', lineGenerator)
+      # Y-axis label
+      svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height / 2)
+        .attr("y", -margin.left + 15)
+        .attr("text-anchor", "middle")
+        .style("font-size", "12px")
+        .text(@props.item.time_series_graph_yaxis)
 
-        chartGroup.selectAll("circle.#{datasetClass}")
-          .data(dataset.data)
-          .enter()
-          .append('circle')
-          .attr('class', datasetClass)
-          .attr('cx', (d) -> xScale(d.x))
-          .attr('cy', (d) -> yScale(d.y))
-          .attr('r', 5)
-          .attr('fill', dataset.color)
+      # Draw axes
+      svg.append("g")
+        .attr("transform", "translate(0,#{height})")
+        .call(d3.axisBottom(x))
 
-      # Create the legend
-      legend = chartGroup.selectAll('.legend')
-        .data(datasets)
-        .enter().append('g')
-        .attr('class', 'legend')
-        .attr('transform', (d, i) -> 'translate(0,' + (i * 20) + ')')  # Adjust vertical spacing
+      svg.append("g")
+        .call(d3.axisLeft(y))
+
+      # Prepare data for each line
+      lines = headers.slice(1).map((header) ->
+        {
+          name: header
+          values: data.map((row) -> 
+            index: parseFloat(row[index]) or 0
+            value: parseFloat(row[header]) or 0
+          )
+        }
+      )
+      console.debug("Processed lines data:", JSON.stringify(lines, null, 2))
+
+      # Draw lines
+      svg.append("g").selectAll(".line")
+        .data(lines)
+        .enter().append("path")
+        .attr("class", "line")
+        .attr("d", (d) ->
+          console.log("Generated path for line:", d.name, line(d.values))
+          line(d.values)
+        )
+        .style("stroke", (d) -> color(d.name))
+        .style("fill", "none")
+        .style("stroke-width", 2)
+
+      # Draw circles at data points
+      svg.selectAll(".circle-group")
+        .data(lines)
+        .enter().append("g")
+        .attr("class", "circle-group")
+        .style("fill", (d) -> color(d.name))
+        .selectAll("circle")
+        .data((d) -> d.values)
+        .enter().append("circle")
+        .attr("cx", (d) -> x(d.index))
+        .attr("cy", (d) -> y(d.value))
+        .attr("r", 4) # Radius of the circle
+        .style("stroke", "white")
+        .style("stroke-width", 1.5)
+
+      # Add legend
+      legend = svg.append("g")
+        .attr("class", "legend")
+        .attr("transform", "translate(50, #{height + 50})")  # Move legend below the graph
+
+      # Add legend items
+      legendItems = legend.selectAll("g")
+        .data(headers.slice(1))
+        .enter().append("g")
+        .attr("transform", (d, i) ->
+          xOffset = (i % Math.floor(width / 100)) * 100  # Horizontal spacing
+          yOffset = Math.floor(i / Math.floor(width / 100)) * 20  # Vertical spacing
+          "translate(#{xOffset}, #{yOffset})"
+        )
 
 
-      # Append color rectangles for legend
-      legend.append('rect')
-        .attr('x', width + 20)  # Position the legend outside the plot area
-        .attr('width', 18)
-        .attr('height', 18)
-        .style('fill', (d) -> d.color)
+      # Add legend color squares
+      legendItems.append("rect")
+        .attr("x", 0)
+        .attr("width", 18)
+        .attr("height", 18)
+        .style("fill", (d) -> color(d))
 
-      # Append text for legend
-      legend.append('text')
-        .attr('x', width + 45)
-        .attr('y', 9)
-        .attr('dy', '.35em')
-        .style('text-anchor', 'start')
-        .text((d) -> d.name)
+      # Add legend text
+      legendItems.append("text")
+        .attr("x", 24)
+        .attr("y", 9)
+        .attr("dy", "0.35em")
+        .style("font-size", "12px")
+        .text((d) -> d)
+
+
+      console.log "TimeSeries::build_graph: done"
 
 
   render: ->
