@@ -258,38 +258,6 @@ class TimeSeries extends React.Component
 
 
   ###
-   * find max value of matrix
-  ###
-  find_xaxis_max: (matrix) ->
-    max = 0
-    for row in matrix
-      for key, val of row
-        if val > max
-          max = val
-
-    max = max + 0.25
-
-  ###
-   * find min and max values of matrix
-  ###
-  find_yaxis_min_max: (matrix) ->
-    min = 0
-    max = 0
-    for row in matrix
-      for key, val of row
-        if val > max
-          max = val
-        if val < min
-          min = val
-
-    min = min - 0.25
-    max = max + 0.25
-
-    "min": min
-    "max": max
-
-
-  ###
    * Inputs table builder. Generates a table of  inputs as matrix
   ###
   build_graph: ->
@@ -320,8 +288,10 @@ class TimeSeries extends React.Component
         .range([0, width])
 
       # Set up Y scale with trimmed domain
-      minY = d3.min(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header])))) - 20
+      minY = d3.min(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
+      minY = minY- (minY * 0.1)
       maxY = d3.max(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
+      # maxY = maxY + (maxY * 0.1)
 
       y = d3.scaleLinear()
         .domain([Math.floor(minY), Math.ceil(maxY)])  # Trim domain to just cover data range
