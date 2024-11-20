@@ -81,6 +81,10 @@ class TimeSeries extends React.Component
    * Converts the string value to an array
   ###
   to_matrix: (listString, headers) ->
+    # No values yet
+    if listString == ""
+      return ""
+
     # Parse the string version of the list of lists into an array
     list = JSON.parse(listString)
 
@@ -403,7 +407,7 @@ class TimeSeries extends React.Component
           )
         }
       )
-      console.debug("Processed lines data:", JSON.stringify(lines, null, 2))
+      # console.debug("Processed lines data:", JSON.stringify(lines, null, 2))
 
       # Draw lines
       svg.append("g").selectAll(".line")
