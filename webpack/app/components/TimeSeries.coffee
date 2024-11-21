@@ -227,8 +227,23 @@ class TimeSeries extends React.Component
   ###
   generateRedShades = (n) ->
     d3.range(n).map((i) ->
-      d3.interpolateRgb("#ff0000", "#990000")(i / (n - 1))
+      d3.interpolateRgb("#ff0000", "#aa0000")(i / (n - 1))
     )
+  generateRandomColors = (count) ->
+    colors = []
+    for [1..count]
+      color = Math.random().toString(16).slice(2, 8)
+      colors.push("#" + color)
+    colors
+  getColors = (count) ->
+    colors = [
+      "#264653",
+      "#2A9D8F",
+      "#E9C46A",
+      "#F4A261",
+      "#E76F51",
+    ]
+    colors.slice(0, count)
 
   ###
    * Inputs table builder. Generates a table of  inputs as matrix
@@ -349,8 +364,10 @@ class TimeSeries extends React.Component
             .tickSize(-width)  # Extend ticks across the chart width
             .tickFormat("")    # Remove tick labels
         )
-        .style("stroke", "#ccc")          # Light gray color
-        # .style("stroke-dasharray", "2,2") # Dashed lines for faint effect
+        .selectAll("line")
+        .style("stroke", "#999")  # Lighter gray
+        # .style("stroke-dasharray", "2,2")
+        .style("opacity", 0.8)       # Adjust transparency
 
       # Add vertical grid lines
       svg.append("g")
@@ -361,8 +378,10 @@ class TimeSeries extends React.Component
             .tickSize(-height)  # Extend ticks across the chart height
             .tickFormat("")     # Remove tick labels
         )
-        .style("stroke", "#ccc")          # Light gray color
-        .style("stroke-dasharray", "1,1") # Dashed lines for faint effect
+        .selectAll("line")
+        .style("stroke", "#999")  # Lighter gray
+        .style("stroke-dasharray", "2,2")
+        .style("opacity", 0.8)       # Adjust transparency
 
       # Draw axes
       svg.append("g")
