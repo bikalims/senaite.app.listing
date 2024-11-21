@@ -67,15 +67,9 @@ class TimeSeries extends React.Component
     if @props.update_editable_field
       @props.update_editable_field uid, name, values, @props.item
 
-    colors = ['steelblue', 'orange', 'green']
-
-
   componentDidMount: ->
     # D3 can only be used after the component has mounted, ensuring the DOM is available
     @build_graph()
-
-  generateRandomColor: ->
-    "#" + Math.floor(Math.random() * 16777215).toString(16)
 
   ###
    * Converts the string value to an array
@@ -105,40 +99,12 @@ class TimeSeries extends React.Component
 
 
   ###
-   * Converts the string value to an array
-  ###
-  to_graph_data: (value, header_len) ->
-    matrix = @to_matrix(value, header_len)
-    datasets = []
-    for row, idx in matrix
-      data = []
-      data.push(
-        x: 1,
-        y: row[1]
-      )
-      data.push(
-        x: 2,
-        y: row[3]
-      )
-      data.push(
-        x: 3,
-        y: row[3]
-      )
-      dataset = 
-        name: 'Dataset ' + row[0]
-        color: @generateRandomColor()
-        data: data
-      datasets.push(dataset)
-
-    console.log "TimeSeries::to_graph_data: data=#{data}"
-    return datasets
-
-  ###
    * Inputs table builder. Generates a table of  inputs as matrix
   ###
   build_rows: ->
     # Convert the result to a matrix of rows
-    headers = @props.item.time_series_columns
+    columns = @props.item.time_series_columns
+    headers = columns.map (i) -> i.ColumnTitle
     header_len = headers.length
     console.log('build_rows: header len=' + header_len);
     values = @state.value
@@ -256,6 +222,13 @@ class TimeSeries extends React.Component
     matrix.map (row) ->
       row.map (val) -> parseFloat(val)
 
+  ###
+   * generate colors - all shades of red
+  ###
+  generateRedShades = (n) ->
+    d3.range(n).map((i) ->
+      d3.interpolateRgb("#ffcccc", "#ff0000")(i / (n - 1))
+    ).reverse()
 
   ###
    * Inputs table builder. Generates a table of  inputs as matrix
@@ -273,9 +246,16 @@ class TimeSeries extends React.Component
         return
 
       # Get datasets
-      headers = @props.item.time_series_columns
+      columns = @props.item.time_series_columns
+      col_types = columns.map (i) -> i.ColumnType
+      headers = columns.map (i) -> i.ColumnTitle
       index = headers[0]
       data = @to_matrix(values, headers)
+
+      # Generate the line colors (exclude index)
+      colors = generateRedShades(headers.length - 1)
+      if col_types[col_types.length - 1] == "average"
+        colors[colors.length - 1] = "#000000"  # replace the last color with black
 
       # Set up dimensions
       margin = {top: 40, right: 80, bottom: 50, left: 60}
@@ -369,7 +349,7 @@ class TimeSeries extends React.Component
             .tickFormat("")    # Remove tick labels
         )
         .style("stroke", "#ccc")          # Light gray color
-        .style("stroke-dasharray", "2,2") # Dashed lines for faint effect
+        # .style("stroke-dasharray", "2,2") # Dashed lines for faint effect
 
       # Add vertical grid lines
       svg.append("g")
@@ -381,7 +361,7 @@ class TimeSeries extends React.Component
             .tickFormat("")     # Remove tick labels
         )
         .style("stroke", "#ccc")          # Light gray color
-        .style("stroke-dasharray", "2,2") # Dashed lines for faint effect
+        .style("stroke-dasharray", "1,1") # Dashed lines for faint effect
 
       # Draw axes
       svg.append("g")
@@ -408,12 +388,9 @@ class TimeSeries extends React.Component
         .data(lines)
         .enter().append("path")
         .attr("class", "line")
-        .attr("d", (d) ->
-          console.log("Generated path for line:", d.name, line(d.values))
-          line(d.values)
-        )
-        .style("stroke", (d) -> color(d.name))
+        .attr("d", (d) -> line(d.values))
         .style("fill", "none")
+        .style("stroke", (d, i) -> colors[i])  # Use predefined colors by index
         .style("stroke-width", 2)
 
       # Draw circles at data points
@@ -421,7 +398,7 @@ class TimeSeries extends React.Component
         .data(lines)
         .enter().append("g")
         .attr("class", "circle-group")
-        .style("fill", (d) -> color(d.name))
+        .style("fill", (d, i) -> colors[i])
         .selectAll("circle")
         .data((d) -> d.values)
         .enter().append("circle")
@@ -452,7 +429,7 @@ class TimeSeries extends React.Component
         .attr("x", 0)
         .attr("width", 18)
         .attr("height", 18)
-        .style("fill", (d) -> color(d))
+        .style("fill", (d, i) -> colors[i])
 
       # Add legend text
       legendItems.append("text")
