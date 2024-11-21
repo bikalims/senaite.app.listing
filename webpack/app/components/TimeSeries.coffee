@@ -359,6 +359,30 @@ class TimeSeries extends React.Component
         .style("font-size", "12px")
         .text(@props.item.time_series_graph_yaxis)
 
+      # Add horizontal grid lines
+      svg.append("g")
+        .attr("class", "grid horizontal")
+        .attr("transform", "translate(0, 0)")
+        .call(
+          d3.axisLeft(y)
+            .tickSize(-width)  # Extend ticks across the chart width
+            .tickFormat("")    # Remove tick labels
+        )
+        .style("stroke", "#ccc")          # Light gray color
+        .style("stroke-dasharray", "2,2") # Dashed lines for faint effect
+
+      # Add vertical grid lines
+      svg.append("g")
+        .attr("class", "grid vertical")
+        .attr("transform", "translate(0, #{height})")
+        .call(
+          d3.axisBottom(x)
+            .tickSize(-height)  # Extend ticks across the chart height
+            .tickFormat("")     # Remove tick labels
+        )
+        .style("stroke", "#ccc")          # Light gray color
+        .style("stroke-dasharray", "2,2") # Dashed lines for faint effect
+
       # Draw axes
       svg.append("g")
         .attr("transform", "translate(0,#{height})")
