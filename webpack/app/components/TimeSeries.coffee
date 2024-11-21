@@ -227,8 +227,8 @@ class TimeSeries extends React.Component
   ###
   generateRedShades = (n) ->
     d3.range(n).map((i) ->
-      d3.interpolateRgb("#ffcccc", "#ff0000")(i / (n - 1))
-    ).reverse()
+      d3.interpolateRgb("#ff0000", "#990000")(i / (n - 1))
+    )
 
   ###
    * Inputs table builder. Generates a table of  inputs as matrix
@@ -256,6 +256,7 @@ class TimeSeries extends React.Component
       colors = generateRedShades(headers.length - 1)
       if col_types[col_types.length - 1] == "average"
         colors[colors.length - 1] = "#000000"  # replace the last color with black
+      # console.log(colors)
 
       # Set up dimensions
       margin = {top: 40, right: 80, bottom: 50, left: 60}
