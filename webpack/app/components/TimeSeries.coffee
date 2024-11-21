@@ -149,7 +149,8 @@ class TimeSeries extends React.Component
       for key, val of row
         # if this.props.item.result_type == "timeseries_readonly"
         if true  # HACKED READ-WRITE now
-          # console.log "TimeSeries::build_rows: READONLY #{cnt}: value=#{val}"
+          if isNaN(val)
+            val = ""
           td_inputs.push(
             <td>
               <input type="text"
@@ -195,32 +196,6 @@ class TimeSeries extends React.Component
     console.log('build_rows: done')
     return output
 
-  ###
-    * return int and float
-  ###
-  parseStringValue = (value) ->
-    # Try to parse as integer
-    intValue = parseInt(value, 10)
-    return intValue if not isNaN(intValue) and intValue.toString() is value
-
-    # If not an integer, try to parse as float
-    floatValue = parseFloat(value)
-    return floatValue if not isNaN(floatValue)
-
-    # If parsing fails, throw an error
-    throw new Error("Unable to parse value: #{value}")
-
-  ###
-    * parse a string matrix to numbers
-  ###
-  parseMatrixString: (matrixString) ->
-    # Remove outer brackets and parse the string as JSON
-    cleanedString = matrixString.replace(/'/g, '"')
-    matrix = JSON.parse(cleanedString)
-
-    # Convert all values to numbers
-    matrix.map (row) ->
-      row.map (val) -> parseFloat(val)
 
   ###
    * generate colors - all shades of red
@@ -292,9 +267,6 @@ class TimeSeries extends React.Component
       y = d3.scaleLinear()
         .domain([Math.floor(minY), Math.ceil(maxY)])  # Trim domain to just cover data range
         .range([height, 0])
-
-      # Set up colors
-      color = d3.scaleOrdinal(d3.schemeCategory10).domain(headers.slice(1))
 
       # Line generator
       line = d3.line()
@@ -396,12 +368,12 @@ class TimeSeries extends React.Component
         {
           name: header
           values: data.map((row) -> 
-            index: parseFloat(row[index]) or 0
-            value: parseFloat(row[header]) or 0
-          )
+            if not isNaN(row[header])
+              index: parseFloat(row[index]) or 0
+              value: parseFloat(row[header]) or 0
+          ).filter((item) -> item?) # Remove undefined items
         }
       )
-      # console.debug("Processed lines data:", JSON.stringify(lines, null, 2))
 
       # Draw lines
       svg.append("g").selectAll(".line")
