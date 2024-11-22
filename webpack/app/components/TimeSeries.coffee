@@ -198,16 +198,16 @@ class TimeSeries extends React.Component
 
   getLineConfigs = (count) ->
     configs = [
-      {color: "#666666", opacity: 1.0, symbol: d3.symbolCircle, dash: "2,2"}
-      {color: "#666666", opacity: 0.8, symbol: d3.symbolSquare, dash: "2,4"}
-      {color: "#666666", opacity: 0.6, symbol: d3.symbolTriangle, dash: "10,5"}
-      {color: "#666666", opacity: 0.4, symbol: d3.symbolDiamond, dash: "10,1"}
-      {color: "#666666", opacity: 0.2, symbol: d3.symbolCross, dash: "2,6"}
+      {color: "#666666", opacity: 1.0, symbol: d3.symbolCircle, dash: ""}
+      {color: "#666666", opacity: 0.8, symbol: d3.symbolCircle, dash: ""}
+      {color: "#666666", opacity: 0.6, symbol: d3.symbolCircle, dash: ""}
+      {color: "#666666", opacity: 0.4, symbol: d3.symbolCircle, dash: ""}
+      {color: "#666666", opacity: 0.2, symbol: d3.symbolCircle, dash: ""}
     ]
     configs.slice(0, count)
 
   # Create symbol generator
-  symbolGenerator = d3.symbol().size(64)  # Adjust size as needed
+  symbolGenerator = d3.symbol().size(24)  # Adjust size as needed
 
   ###
    * Inputs table builder. Generates a table of  inputs as matrix
@@ -237,7 +237,7 @@ class TimeSeries extends React.Component
         line_configs[line_configs.length - 1].color = "#000000"  # replace the last color with black
         line_configs[line_configs.length - 1].dash = ""  # replace the last color with black
         line_configs[line_configs.length - 1].opacity = "1.0"  # replace the last color with black
-        line_configs[line_configs.length - 1].symbol = d3.symbolStar  # replace the last color with black
+        line_configs[line_configs.length - 1].symbol = d3.symbolCircle  # replace the last color with black
       console.log(line_configs)
 
       # Set up dimensions
