@@ -376,6 +376,7 @@ class TimeSeries extends React.Component
             "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
           )
           .style("fill", line_configs[i].color)
+          .style("opacity", line_configs[i].opacity)
       )
 
       # Add legend
