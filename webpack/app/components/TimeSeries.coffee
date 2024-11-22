@@ -196,29 +196,18 @@ class TimeSeries extends React.Component
     console.log('build_rows: done')
     return output
 
-
-  ###
-   * generate colors - all shades of red
-  ###
-  generateRedShades = (n) ->
-    d3.range(n).map((i) ->
-      d3.interpolateRgb("#ff0000", "#aa0000")(i / (n - 1))
-    )
-  generateRandomColors = (count) ->
-    colors = []
-    for [1..count]
-      color = Math.random().toString(16).slice(2, 8)
-      colors.push("#" + color)
-    colors
-  getColors = (count) ->
-    colors = [
-      "#264653",
-      "#2A9D8F",
-      "#E9C46A",
-      "#F4A261",
-      "#E76F51",
+  getLineConfigs = (count) ->
+    configs = [
+      {color: "#666666", opacity: 1.0, symbol: d3.symbolCircle, dash: "2,2"}
+      {color: "#666666", opacity: 0.8, symbol: d3.symbolSquare, dash: "2,4"}
+      {color: "#666666", opacity: 0.6, symbol: d3.symbolTriangle, dash: "10,5"}
+      {color: "#666666", opacity: 0.4, symbol: d3.symbolDiamond, dash: "10,1"}
+      {color: "#666666", opacity: 0.2, symbol: d3.symbolCross, dash: "2,6"}
     ]
-    colors.slice(0, count)
+    configs.slice(0, count)
+
+  # Create symbol generator
+  symbolGenerator = d3.symbol().size(64)  # Adjust size as needed
 
   ###
    * Inputs table builder. Generates a table of  inputs as matrix
@@ -243,10 +232,13 @@ class TimeSeries extends React.Component
       data = @to_matrix(values, headers)
 
       # Generate the line colors (exclude index)
-      colors = generateRedShades(headers.length - 1)
+      line_configs = getLineConfigs(headers.length - 1)
       if col_types[col_types.length - 1] == "average"
-        colors[colors.length - 1] = "#000000"  # replace the last color with black
-      # console.log(colors)
+        line_configs[line_configs.length - 1].color = "#000000"  # replace the last color with black
+        line_configs[line_configs.length - 1].dash = ""  # replace the last color with black
+        line_configs[line_configs.length - 1].opacity = "1.0"  # replace the last color with black
+        line_configs[line_configs.length - 1].symbol = d3.symbolStar  # replace the last color with black
+      console.log(line_configs)
 
       # Set up dimensions
       margin = {top: 40, right: 80, bottom: 50, left: 60}
@@ -267,17 +259,6 @@ class TimeSeries extends React.Component
       y = d3.scaleLinear()
         .domain([Math.floor(minY), Math.ceil(maxY)])  # Trim domain to just cover data range
         .range([height, 0])
-
-      # Line generator
-      line = d3.line()
-        .x((d) ->
-          console.debug("Mapping X:", d.index, "to", x(d.index))
-          x(d.index)
-        )
-        .y((d) ->
-          console.debug("Mapping Y:", d.value, "to", y(d.value))
-          y(d.value)
-        )
 
       # Create SVG container
       svg = d3.select(@svgRef.current)
@@ -363,42 +344,39 @@ class TimeSeries extends React.Component
       svg.append("g")
         .call(d3.axisLeft(y))
 
-      # Prepare data for each line
-      lines = headers.slice(1).map((header) ->
-        {
-          name: header
-          values: data.map((row) -> 
-            if not isNaN(row[header])
-              index: parseFloat(row[index]) or 0
-              value: parseFloat(row[header]) or 0
-          ).filter((item) -> item?) # Remove undefined items
-        }
+      headers.slice(1).forEach((key, i) ->
+        console.log('Main loop: ' + key + '  ' + i)
+        # Line generator
+        line = d3.line()
+          .x((d) ->
+            console.debug("Mapping X:", d[index], " to ", x(d[index]))
+            x(d[index])
+          )
+          .y((d) ->
+            console.debug("Mapping Y:", d[key], " to ", y(d[key]))
+            y(d[key])
+          )
+
+        svg.append("path")
+          .datum(data)
+          .attr("fill", "none")
+          .attr("stroke-width", 2)
+          .attr("stroke", line_configs[i].color)
+          .attr("opacity", line_configs[i].opacity)
+          .attr("stroke-dasharray", line_configs[i].dash)
+          .attr("d", line)
+
+        # Add data points with different symbols
+        svg.selectAll(".symbol-#{i}")
+          .data(data)
+          .enter().append("path")
+          .attr("class", "symbol symbol-#{i}")
+          .attr("d", symbolGenerator.type(line_configs[i].symbol))
+          .attr("transform", (d) ->
+            "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
+          )
+          .style("fill", line_configs[i].color)
       )
-
-      # Draw lines
-      svg.append("g").selectAll(".line")
-        .data(lines)
-        .enter().append("path")
-        .attr("class", "line")
-        .attr("d", (d) -> line(d.values))
-        .style("fill", "none")
-        .style("stroke", (d, i) -> colors[i])  # Use predefined colors by index
-        .style("stroke-width", 2)
-
-      # Draw circles at data points
-      svg.selectAll(".circle-group")
-        .data(lines)
-        .enter().append("g")
-        .attr("class", "circle-group")
-        .style("fill", (d, i) -> colors[i])
-        .selectAll("circle")
-        .data((d) -> d.values)
-        .enter().append("circle")
-        .attr("cx", (d) -> x(d.index))
-        .attr("cy", (d) -> y(d.value))
-        .attr("r", 4) # Radius of the circle
-        .style("stroke", "white")
-        .style("stroke-width", 1.5)
 
       # Add legend
       legend = svg.append("g")
@@ -421,7 +399,8 @@ class TimeSeries extends React.Component
         .attr("x", 0)
         .attr("width", 18)
         .attr("height", 18)
-        .style("fill", (d, i) -> colors[i])
+        .style("fill", (d, i) -> line_configs[i].color)
+        .style("opacity", (d, i) -> line_configs[i].opacity)
 
       # Add legend text
       legendItems.append("text")
