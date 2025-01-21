@@ -8393,7 +8393,7 @@ TimeSeries = function () {
       value: function to_matrix(listString, headers, src) {
         var list, matrix;
         // No values yet
-        if (listString === "") {
+        if (listString === void 0 || listString === "") {
           return "";
         }
         // Parse the string version of the list of lists into an array

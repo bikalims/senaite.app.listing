@@ -76,7 +76,7 @@ class TimeSeries extends React.Component
   ###
   to_matrix: (listString, headers, src) ->
     # No values yet
-    if listString == ""
+    if listString == undefined or listString == ""
       return ""
 
     # Parse the string version of the list of lists into an array
