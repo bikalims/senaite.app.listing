@@ -153,37 +153,40 @@ class TimeSeries extends React.Component
     for row in matrix
       cnt += 1
       # Create list of TDs
-      td_inputs = []
+      td_elements = []
       # console.log "Row = " + row
       for key, value of row
         val = value['val']
         OOR = value['OOR']
         if isNaN(val)
           val = ""
-        color = '#2d5e77'
-        if key != index and OOR
-          color = 'red'
-          val = "! " + val
         # console.log 'key=' + key + ' val=' + val
+
+        klassName = "time-series-data"
+        td_content = []
         # if this.props.item.result_type == "timeseries_readonly"
         if true  # REMOVED READ-WRITE now
-          td_inputs.push(
-            <td>
-              <input type="text"
-                     value={val}
-                     uid={@props.uid}
-                     name={@props.name}
-                     title={@props.help or @props.title}
-                     onChange={@props.onChange or @on_change}
-                     column_key={@props.column_key}
-                     className={@props.className}
-                     readOnly="readOnly"
-                     style={color:color}
-                     {...@props.attrs} />
-            </td>)
+          if key != index and OOR
+            klassName += " time-series-oor"
+            td_content.push(
+                <span className="fas fa-exclamation-circle"
+                      title="Result out of range"/>)
+          td_content.push(
+            <span type="text"
+                   uid={@props.uid}
+                   name={@props.name}
+                   title={@props.help or @props.title}
+                   onChange={@props.onChange or @on_change}
+                   column_key={@props.column_key}
+                   className={@props.className}
+                   {...@props.attrs}>{val}</span>)
+          td_elements.push(
+              <td className={klassName}>
+                {td_content}
+              </td>)
         else
           # console.log "TimeSeries::build_rows: EDITABLE #{cnt}: value=#{row}"
-          td_inputs.push(
+          td_elements.push(
             <td>
               <input type="text"
                      # size={@props.size or 5}
@@ -199,7 +202,7 @@ class TimeSeries extends React.Component
       # Add row to output
       row_output.push(
         <tr>
-          {td_inputs}
+          {td_elements}
         </tr>
       )
 

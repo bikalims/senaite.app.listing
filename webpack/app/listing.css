@@ -284,5 +284,18 @@ selected elements from multiselect
   padding: 0;
 }
 .time-series-table input {
-  width: fit_content;
+  width: fit-content;
+}
+.time-series-data {
+  border: 1px solid #ddd;
+  background-color: rgb(233, 236, 239);
+  text-align: right;
+}
+.time-series-data span {
+  color: '#2d5e77';
+  border: None;
+  background-color: inherit;
+}
+.time-series-oor span {
+  color: red;
 }

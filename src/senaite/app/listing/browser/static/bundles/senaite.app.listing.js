@@ -8431,7 +8431,7 @@ TimeSeries = function () {
     }, {
       key: "build_rows",
       value: function build_rows() {
-        var OOR, cnt, color, columns, head, header_len, headers, index, j, k, key, len, len1, matrix, output, row, row_output, td_inputs, th_inputs, val, value, values;
+        var OOR, cnt, columns, head, header_len, headers, index, j, k, key, klassName, len, len1, matrix, output, row, row_output, td_content, td_elements, th_inputs, val, value, values;
         // Convert the result to a matrix of rows
         columns = this.props.item.time_series_columns;
         headers = columns.map(function (i) {
@@ -8472,7 +8472,7 @@ TimeSeries = function () {
           row = matrix[k];
           cnt += 1;
           // Create list of TDs
-          td_inputs = [];
+          td_elements = [];
           // console.log "Row = " + row
           for (key in row) {
             value = row[key];
@@ -8481,33 +8481,35 @@ TimeSeries = function () {
             if (isNaN(val)) {
               val = "";
             }
-            color = '#2d5e77';
-            if (key !== index && OOR) {
-              color = 'red';
-              val = "! " + val;
-            }
             // console.log 'key=' + key + ' val=' + val
+            klassName = "time-series-data";
+            td_content = [];
             // if this.props.item.result_type == "timeseries_readonly"
             if (true) {
               // REMOVED READ-WRITE now
-              td_inputs.push(/*#__PURE__*/external_React_default().createElement("td", null, /*#__PURE__*/external_React_default().createElement("input", TimeSeries_coffee_extends({
+              if (key !== index && OOR) {
+                klassName += " time-series-oor";
+                td_content.push(/*#__PURE__*/external_React_default().createElement("span", {
+                  className: "fas fa-exclamation-circle",
+                  title: "Result out of range"
+                }));
+              }
+              td_content.push(/*#__PURE__*/external_React_default().createElement("span", TimeSeries_coffee_extends({
                 type: "text",
-                value: val,
                 uid: this.props.uid,
                 name: this.props.name,
                 title: this.props.help || this.props.title,
                 onChange: this.props.onChange || this.on_change,
                 column_key: this.props.column_key,
-                className: this.props.className,
-                readOnly: "readOnly",
-                style: {
-                  color: color
-                }
-              }, this.props.attrs))));
+                className: this.props.className
+              }, this.props.attrs), val));
+              td_elements.push(/*#__PURE__*/external_React_default().createElement("td", {
+                className: klassName
+              }, td_content));
             } else {}
           }
           // Add row to output
-          row_output.push(/*#__PURE__*/external_React_default().createElement("tr", null, td_inputs));
+          row_output.push(/*#__PURE__*/external_React_default().createElement("tr", null, td_elements));
         }
         output.push(/*#__PURE__*/external_React_default().createElement("tbody", null, row_output));
         console.log('build_rows: done');
