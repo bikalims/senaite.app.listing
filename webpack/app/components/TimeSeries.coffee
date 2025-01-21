@@ -166,11 +166,6 @@ class TimeSeries extends React.Component
         td_content = []
         # if this.props.item.result_type == "timeseries_readonly"
         if true  # REMOVED READ-WRITE now
-          if key != index and OOR
-            klassName += " time-series-oor"
-            td_content.push(
-                <span className="fas fa-exclamation-circle"
-                      title="Result out of range"/>)
           td_content.push(
             <span type="text"
                    uid={@props.uid}
@@ -180,6 +175,11 @@ class TimeSeries extends React.Component
                    column_key={@props.column_key}
                    className={@props.className}
                    {...@props.attrs}>{val}</span>)
+          if key != index and OOR
+            klassName += " time-series-oor"
+            td_content.push(
+                <span className="fas fa-exclamation-circle"
+                      title="Result out of range"/>)
           td_elements.push(
               <td className={klassName}>
                 {td_content}

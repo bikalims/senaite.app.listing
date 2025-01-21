@@ -8487,13 +8487,6 @@ TimeSeries = function () {
             // if this.props.item.result_type == "timeseries_readonly"
             if (true) {
               // REMOVED READ-WRITE now
-              if (key !== index && OOR) {
-                klassName += " time-series-oor";
-                td_content.push(/*#__PURE__*/external_React_default().createElement("span", {
-                  className: "fas fa-exclamation-circle",
-                  title: "Result out of range"
-                }));
-              }
               td_content.push(/*#__PURE__*/external_React_default().createElement("span", TimeSeries_coffee_extends({
                 type: "text",
                 uid: this.props.uid,
@@ -8503,6 +8496,13 @@ TimeSeries = function () {
                 column_key: this.props.column_key,
                 className: this.props.className
               }, this.props.attrs), val));
+              if (key !== index && OOR) {
+                klassName += " time-series-oor";
+                td_content.push(/*#__PURE__*/external_React_default().createElement("span", {
+                  className: "fas fa-exclamation-circle",
+                  title: "Result out of range"
+                }));
+              }
               td_elements.push(/*#__PURE__*/external_React_default().createElement("td", {
                 className: klassName
               }, td_content));
