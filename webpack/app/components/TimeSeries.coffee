@@ -74,7 +74,7 @@ class TimeSeries extends React.Component
   ###
    * Converts the string value to an array
   ###
-  to_matrix: (listString, headers) ->
+  to_matrix: (listString, headers, src) ->
     # No values yet
     if listString == ""
       return ""
@@ -91,10 +91,17 @@ class TimeSeries extends React.Component
 
     matrix.map (row) ->
         headers.forEach (header, index) ->
-            if index = 0
+            if src == 'table'
               row[header] = row[header]
+            else if src == 'graph'
+              if index = 0
+                row[header] = row[header]
+              else
+                row[header] = parseFloat(row[header])
             else
-              row[header] = parseFloat(row[header])
+              console.error 'to_matrix: unknown src ' + src
+
+
     matrix
 
 
@@ -105,11 +112,12 @@ class TimeSeries extends React.Component
     # Convert the result to a matrix of rows
     columns = @props.item.time_series_columns
     headers = columns.map (i) -> i.ColumnTitle
+    index = headers[0]
     header_len = headers.length
-    console.log('build_rows: header len=' + header_len);
-    values = @state.value
-    matrix = @to_matrix(values, headers)
-
+    # console.log 'build_rows: header len = ' + header_len
+    values = @props.item.time_series_values
+    # console.log 'build_rows: values = ' + values
+    matrix = @to_matrix(values, headers, 'table')
 
     # Build the rows
     output = []
@@ -146,15 +154,22 @@ class TimeSeries extends React.Component
       cnt += 1
       # Create list of TDs
       td_inputs = []
-      for key, val of row
+      # console.log "Row = " + row
+      for key, value of row
+        val = value['val']
+        OOR = value['OOR']
+        if isNaN(val)
+          val = ""
+        color = '#2d5e77'
+        if key != index and OOR
+          color = 'red'
+          val = "! " + val
+        # console.log 'key=' + key + ' val=' + val
         # if this.props.item.result_type == "timeseries_readonly"
-        if true  # HACKED READ-WRITE now
-          if isNaN(val)
-            val = ""
+        if true  # REMOVED READ-WRITE now
           td_inputs.push(
             <td>
               <input type="text"
-                     # size={@props.size or 5}
                      value={val}
                      uid={@props.uid}
                      name={@props.name}
@@ -163,6 +178,7 @@ class TimeSeries extends React.Component
                      column_key={@props.column_key}
                      className={@props.className}
                      readOnly="readOnly"
+                     style={color:color}
                      {...@props.attrs} />
             </td>)
         else
@@ -213,7 +229,7 @@ class TimeSeries extends React.Component
    * Inputs table builder. Generates a table of  inputs as matrix
   ###
   build_graph: ->
-    console.log "TimeSeries::build_graph: entered"
+    # console.log "TimeSeries::build_graph: entered"
     if @svgRef?.current
 
       console.log "TimeSeries::build_graph: is current"
@@ -229,7 +245,9 @@ class TimeSeries extends React.Component
       col_types = columns.map (i) -> i.ColumnType
       headers = columns.map (i) -> i.ColumnTitle
       index = headers[0]
-      data = @to_matrix(values, headers)
+      # console.log 'Graph raw data: ' + values
+      data = @to_matrix(values, headers, 'graph')
+      # console.log 'Graph data: ' + data
 
       # Generate the line colors (exclude index)
       line_configs = getLineConfigs(headers.length - 1)
@@ -238,7 +256,7 @@ class TimeSeries extends React.Component
         line_configs[line_configs.length - 1].dash = ""  # replace the last color with black
         line_configs[line_configs.length - 1].opacity = "1.0"  # replace the last color with black
         line_configs[line_configs.length - 1].symbol = d3.symbolCircle  # replace the last color with black
-      console.log(line_configs)
+      # console.log 'Line configs: ' + line_configs
 
       # Set up dimensions
       margin = {top: 40, right: 80, bottom: 50, left: 60}
@@ -345,15 +363,15 @@ class TimeSeries extends React.Component
         .call(d3.axisLeft(y))
 
       headers.slice(1).forEach((key, i) ->
-        console.log('Main loop: ' + key + '  ' + i)
+        # console.debug('Main loop: ' + key + '  ' + i)
         # Line generator
         line = d3.line()
           .x((d) ->
-            console.debug("Mapping X:", d[index], " to ", x(d[index]))
+            # console.debug("Mapping X:", d[index], " to ", x(d[index]))
             x(d[index])
           )
           .y((d) ->
-            console.debug("Mapping Y:", d[key], " to ", y(d[key]))
+            # console.debug("Mapping Y:", d[key], " to ", y(d[key]))
             y(d[key])
           )
 
@@ -372,9 +390,10 @@ class TimeSeries extends React.Component
           .enter().append("path")
           .attr("class", "symbol symbol-#{i}")
           .attr("d", symbolGenerator.type(line_configs[i].symbol))
-          .attr("transform", (d) ->
-            "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
-          )
+          # This creates problems with empty vlues
+          # .attr("transform", (d) ->
+          #   "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
+          # )
           .style("fill", line_configs[i].color)
           .style("opacity", line_configs[i].opacity)
       )
@@ -428,7 +447,7 @@ class TimeSeries extends React.Component
         {@props.after and <span className={@props.after_css or "after_field"} dangerouslySetInnerHTML={{__html: @props.after}}></span>}
       </div>
     else
-      console.log "TimeSeries::render: got #{values.length} values #{values} "
+      # console.log "TimeSeries::render: got #{values.length} values #{values} "
       <div className={@props.field_css or "timeseries"}>
         {@props.before and <span className={@props.before_css or "before_field"} dangerouslySetInnerHTML={{__html: @props.before}}></span>}
         <table className="time-series-table" tabIndex={@props.tabIndex}>
