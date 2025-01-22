@@ -8635,8 +8635,11 @@ TimeSeries = function () {
             yOffset = Math.floor(i / Math.floor(width / 100)) * 20; // Vertical spacing
             return "translate(".concat(xOffset, ", ").concat(yOffset, ")");
           });
-          // Add legend color squares
-          legendItems.append("rect").attr("x", 0).attr("width", 18).attr("height", 18).style("fill", function (d, i) {
+          // Add legend color symbols
+          legendItems.append("path").attr("d", function (d, i) {
+            return symbol_Symbol().type(line_configs[i].symbol).size(100)();
+          }).attr("transform", "translate(9, 9)").style("fill", function (d, i) {
+            // Center the symbol within the legend item
             return line_configs[i].color;
           }).style("opacity", function (d, i) {
             return line_configs[i].opacity;
