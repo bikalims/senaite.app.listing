@@ -271,11 +271,14 @@ selected elements from multiselect
 .ajax-contents-table tr.dragging { opacity: 0; }
 .ajax-contents-table td.dnd { cursor: move; }
 
-.time-series-table {
+table.time-series-table {
   padding: 0;
 }
-.time-series-table th {
+table.time-series-table th {
   padding: 0;
+}
+table.time-series-table th input{
+  text-align: center;
 }
 .time-series-table td {
   padding: 0;
@@ -283,19 +286,19 @@ selected elements from multiselect
 .time-series-table tr {
   padding: 0;
 }
-.time-series-table input {
+table.time-series-table input {
   width: fit-content;
 }
-.time-series-data {
+td.time-series-data {
   border: 1px solid #ddd;
   background-color: rgb(233, 236, 239);
   text-align: right;
 }
-.time-series-data span {
+td.time-series-data span {
   color: '#2d5e77';
   border: None;
   background-color: inherit;
 }
-.time-series-oor span {
+td.time-series-oor span {
   color: red;
 }
