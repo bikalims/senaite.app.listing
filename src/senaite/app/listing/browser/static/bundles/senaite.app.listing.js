@@ -8621,12 +8621,9 @@ TimeSeries = function () {
             });
             svg.append("path").datum(data).attr("fill", "none").attr("stroke-width", 2).attr("stroke", line_configs[i].color).attr("opacity", line_configs[i].opacity).attr("stroke-dasharray", line_configs[i].dash).attr("d", line);
             // Add data points with different symbols
-            return svg.selectAll(".symbol-".concat(i)).data(data).enter().append("path").attr("class", "symbol symbol-".concat(
-            // This creates problems with empty vlues
-            // .attr("transform", (d) ->
-            //   "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
-            // )
-            i)).attr("d", symbolGenerator.type(line_configs[i].symbol)).style("fill", line_configs[i].color).style("opacity", line_configs[i].opacity);
+            return svg.selectAll(".symbol-".concat(i)).data(data).enter().append("path").attr("class", "symbol symbol-".concat(i)).attr("d", symbolGenerator.type(line_configs[i].symbol)).attr("transform", function (d) {
+              return "translate(".concat(x(parseFloat(d[index])), ", ").concat(y(parseFloat(d[key])), ")");
+            }).style("fill", line_configs[i].color).style("opacity", line_configs[i].opacity);
           });
           // Add legend
           legend = svg.append("g").attr("class", "legend").attr("transform", "translate(50, ".concat(height + 50, ")"));
@@ -8699,39 +8696,41 @@ TimeSeries = function () {
     }]);
   }((external_React_default()).Component);
   ;
+
+  // Don't use symbolCircle because the last line is always a circle - see below
   getLineConfigs = function getLineConfigs(count) {
     var configs;
     configs = [{
       color: "#666666",
       opacity: 1.0,
-      symbol: circle,
+      symbol: star,
       dash: ""
     }, {
       color: "#666666",
       opacity: 0.8,
-      symbol: circle,
+      symbol: square,
       dash: ""
     }, {
       color: "#666666",
       opacity: 0.6,
-      symbol: circle,
+      symbol: triangle,
       dash: ""
     }, {
       color: "#666666",
       opacity: 0.4,
-      symbol: circle,
+      symbol: diamond,
       dash: ""
     }, {
       color: "#666666",
       opacity: 0.2,
-      symbol: circle,
+      symbol: cross,
       dash: ""
     }];
     return configs.slice(0, count);
   };
 
   // Create symbol generator
-  symbolGenerator = symbol_Symbol().size(24); // Adjust size as needed
+  symbolGenerator = symbol_Symbol().size(48); // Adjust size as needed
 
   return TimeSeries;
 }.call(undefined);

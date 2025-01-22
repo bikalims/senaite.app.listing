@@ -215,18 +215,19 @@ class TimeSeries extends React.Component
     console.log('build_rows: done')
     return output
 
+  # Don't use symbolCircle because the last line is always a circle - see below
   getLineConfigs = (count) ->
     configs = [
-      {color: "#666666", opacity: 1.0, symbol: d3.symbolCircle, dash: ""}
-      {color: "#666666", opacity: 0.8, symbol: d3.symbolCircle, dash: ""}
-      {color: "#666666", opacity: 0.6, symbol: d3.symbolCircle, dash: ""}
-      {color: "#666666", opacity: 0.4, symbol: d3.symbolCircle, dash: ""}
-      {color: "#666666", opacity: 0.2, symbol: d3.symbolCircle, dash: ""}
+      {color: "#666666", opacity: 1.0, symbol: d3.symbolStar, dash: ""}
+      {color: "#666666", opacity: 0.8, symbol: d3.symbolSquare, dash: ""}
+      {color: "#666666", opacity: 0.6, symbol: d3.symbolTriangle, dash: ""}
+      {color: "#666666", opacity: 0.4, symbol: d3.symbolDiamond, dash: ""}
+      {color: "#666666", opacity: 0.2, symbol: d3.symbolCross, dash: ""}
     ]
     configs.slice(0, count)
 
   # Create symbol generator
-  symbolGenerator = d3.symbol().size(24)  # Adjust size as needed
+  symbolGenerator = d3.symbol().size(48)  # Adjust size as needed
 
   ###
    * Inputs table builder. Generates a table of  inputs as matrix
@@ -393,10 +394,9 @@ class TimeSeries extends React.Component
           .enter().append("path")
           .attr("class", "symbol symbol-#{i}")
           .attr("d", symbolGenerator.type(line_configs[i].symbol))
-          # This creates problems with empty vlues
-          # .attr("transform", (d) ->
-          #   "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
-          # )
+          .attr("transform", (d) ->
+            "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
+          )
           .style("fill", line_configs[i].color)
           .style("opacity", line_configs[i].opacity)
       )
