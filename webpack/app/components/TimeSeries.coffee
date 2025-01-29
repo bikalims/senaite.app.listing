@@ -256,7 +256,7 @@ class TimeSeries extends React.Component
       # Generate the line colors (exclude index)
       line_configs = getLineConfigs(headers.length - 1)
       if col_types[col_types.length - 1] == "average"
-        line_configs[line_configs.length - 1].color = "#000000"  # replace the last color with black
+        line_configs[line_configs.length - 1].color = "red"  # replace the last color with black
         line_configs[line_configs.length - 1].dash = ""  # replace the last color with black
         line_configs[line_configs.length - 1].opacity = "1.0"  # replace the last color with black
         line_configs[line_configs.length - 1].symbol = d3.symbolCircle  # replace the last color with black
