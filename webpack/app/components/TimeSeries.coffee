@@ -177,9 +177,6 @@ class TimeSeries extends React.Component
                    {...@props.attrs}>{val}</span>)
           if key != index and OOR
             klassName += " time-series-oor"
-            td_content.push(
-                <span className="fas fa-exclamation-circle"
-                      title="Result out of range"/>)
           td_elements.push(
               <td className={klassName}>
                 {td_content}
