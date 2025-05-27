@@ -265,15 +265,15 @@ class TimeSeries extends React.Component
       height = 400 - margin.top - margin.bottom + 50
 
       # Set up scales
+      xExtent = d3.extent(data, (d) -> parseFloat(d[index]))
       x = d3.scaleLinear()
-        .domain(d3.extent(data, (d) -> parseFloat(d[index])))
+        .domain(xExtent)
         .range([0, width])
 
       # Set up Y scale with trimmed domain
-      minY = d3.min(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
-      minY = minY- (minY * 0.1)
+      absoluteMinY = d3.min(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
+      minY = absoluteMinY- (absoluteMinY * 0.1)
       maxY = d3.max(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
-      # maxY = maxY + (maxY * 0.1)
 
       y = d3.scaleLinear()
         .domain([Math.floor(minY), Math.ceil(maxY)])  # Trim domain to just cover data range
@@ -315,8 +315,18 @@ class TimeSeries extends React.Component
         .text(@props.item.time_series_graph_xaxis)
 
       # Y-axis
-      svg.append("g")
-        .call(d3.axisLeft(y))
+      interval = 5
+      if maxY - minY < 30
+        interval = 2
+      console.log "Y Axis: minY: ", minY, " absoluteMinY: ", absoluteMinY
+      console.log "Y Axis: min: ", minY, " max: ", maxY
+      minTicks = minY - (minY % interval) + interval
+      maxTicks = maxY + (maxY % interval) + interval
+      console.log "Y Axis: min: ", minTicks, " max: ", maxTicks
+      yTicks = d3.range(minTicks, maxTicks, interval)
+      yAxis = d3.axisLeft(y)
+        .tickValues(yTicks)
+        .tickSize(-width)  # Extend ticks across the chart width
 
       # Y-axis label
       svg.append("text")
@@ -331,15 +341,10 @@ class TimeSeries extends React.Component
       svg.append("g")
         .attr("class", "grid horizontal")
         .attr("transform", "translate(0, 0)")
-        .call(
-          d3.axisLeft(y)
-            .tickSize(-width)  # Extend ticks across the chart width
-            .tickFormat("")    # Remove tick labels
-        )
+        .call(yAxis)
         .selectAll("line")
         .style("stroke", "#999")  # Lighter gray
-        # .style("stroke-dasharray", "2,2")
-        .style("opacity", 0.8)       # Adjust transparency
+        .style("opacity", 0.4)       # Adjust transparency
 
       # Add vertical grid lines
       svg.append("g")
@@ -360,19 +365,18 @@ class TimeSeries extends React.Component
         .attr("transform", "translate(0,#{height})")
         .call(d3.axisBottom(x))
 
-      svg.append("g")
-        .call(d3.axisLeft(y))
+      # Get interpolation
+      interp = @props.item.time_series_graph_interpolation
+      curve_val = d3[interp]
 
       headers.slice(1).forEach((key, i) ->
         # console.debug('Main loop: ' + key + '  ' + i)
-        # Line generator
-        line = d3.line()
+        lineGen = d3.line()
+          .curve(curve_val)
           .x((d) ->
-            # console.debug("Mapping X:", d[index], " to ", x(d[index]))
             x(d[index])
           )
           .y((d) ->
-            # console.debug("Mapping Y:", d[key], " to ", y(d[key]))
             y(d[key])
           )
 
@@ -383,7 +387,7 @@ class TimeSeries extends React.Component
           .attr("stroke", line_configs[i].color)
           .attr("opacity", line_configs[i].opacity)
           .attr("stroke-dasharray", line_configs[i].dash)
-          .attr("d", line)
+          .attr("d", lineGen)
 
         # Add data points with different symbols
         svg.selectAll(".symbol-#{i}")
