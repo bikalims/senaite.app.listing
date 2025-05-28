@@ -215,11 +215,11 @@ class TimeSeries extends React.Component
   # Don't use symbolCircle because the last line is always a circle - see below
   getLineConfigs = (count) ->
     configs = [
-      {color: "#666666", opacity: 1.0, symbol: d3.symbolStar, dash: ""}
-      {color: "#666666", opacity: 0.8, symbol: d3.symbolSquare, dash: ""}
-      {color: "#666666", opacity: 0.6, symbol: d3.symbolTriangle, dash: ""}
-      {color: "#666666", opacity: 0.4, symbol: d3.symbolDiamond, dash: ""}
-      {color: "#666666", opacity: 0.2, symbol: d3.symbolCross, dash: ""}
+      {symbol: d3.symbolStar, dash: ""}
+      {symbol: d3.symbolSquare, dash: ""}
+      {symbol: d3.symbolTriangle, dash: ""}
+      {symbol: d3.symbolDiamond, dash: ""}
+      {symbol: d3.symbolCross, dash: ""}
     ]
     configs.slice(0, count)
 
@@ -244,6 +244,7 @@ class TimeSeries extends React.Component
       # Get datasets
       columns = @props.item.time_series_columns
       col_types = columns.map (i) -> i.ColumnType
+      col_colors = columns.map (i) -> i.ColumnColor
       headers = columns.map (i) -> i.ColumnTitle
       index = headers[0]
       # console.log 'Graph raw data: ' + values
@@ -252,12 +253,6 @@ class TimeSeries extends React.Component
 
       # Generate the line colors (exclude index)
       line_configs = getLineConfigs(headers.length - 1)
-      if col_types[col_types.length - 1] == "average"
-        line_configs[line_configs.length - 1].color = "red"  # replace the last color with black
-        line_configs[line_configs.length - 1].dash = ""  # replace the last color with black
-        line_configs[line_configs.length - 1].opacity = "1.0"  # replace the last color with black
-        line_configs[line_configs.length - 1].symbol = d3.symbolCircle  # replace the last color with black
-      # console.log 'Line configs: ' + line_configs
 
       # Set up dimensions
       margin = {top: 40, right: 80, bottom: 50, left: 60}
@@ -316,10 +311,10 @@ class TimeSeries extends React.Component
 
       # Y-axis
       interval = 5
-      if maxY - minY < 30
+      if maxY - minY < 50
         interval = 2
       console.log "Y Axis: minY: ", minY, " absoluteMinY: ", absoluteMinY
-      console.log "Y Axis: min: ", minY, " max: ", maxY
+      console.log "Y Axis: min: ", minY, " max: ", maxY, " diff: ", maxY - minY
       minTicks = minY - (minY % interval) + interval
       maxTicks = maxY + (maxY % interval) + interval
       console.log "Y Axis: min: ", minTicks, " max: ", maxTicks
@@ -370,7 +365,8 @@ class TimeSeries extends React.Component
       curve_val = d3[interp]
 
       headers.slice(1).forEach((key, i) ->
-        # console.debug('Main loop: ' + key + '  ' + i)
+        console.log('Main loop: ' + key + '  ' + i)
+        console.log('Main loop: ' + col_colors[i+1])
         lineGen = d3.line()
           .curve(curve_val)
           .x((d) ->
@@ -384,8 +380,7 @@ class TimeSeries extends React.Component
           .datum(data)
           .attr("fill", "none")
           .attr("stroke-width", 2)
-          .attr("stroke", line_configs[i].color)
-          .attr("opacity", line_configs[i].opacity)
+          .attr("stroke", col_colors[i+1])
           .attr("stroke-dasharray", line_configs[i].dash)
           .attr("d", lineGen)
 
@@ -398,8 +393,8 @@ class TimeSeries extends React.Component
           .attr("transform", (d) ->
             "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
           )
-          .style("fill", line_configs[i].color)
-          .style("opacity", line_configs[i].opacity)
+          .style("fill", col_colors[i+1])
+          .attr("stroke", col_colors[i+1])
       )
 
       # Add legend
@@ -423,8 +418,7 @@ class TimeSeries extends React.Component
           d3.symbol().type(line_configs[i].symbol).size(100)()
         )
         .attr("transform", "translate(9, 9)")  # Center the symbol within the legend item
-        .style("fill", (d, i) -> line_configs[i].color)
-        .style("opacity", (d, i) -> line_configs[i].opacity)
+        .style("fill", (d, i) -> col_colors[i+1])
 
       # Add legend text
       legendItems.append("text")

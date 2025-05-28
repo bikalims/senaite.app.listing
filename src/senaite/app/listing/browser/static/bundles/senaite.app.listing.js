@@ -27253,7 +27253,7 @@ TimeSeries = function () {
     }, {
       key: "build_graph",
       value: function build_graph() {
-        var absoluteMinY, col_types, columns, curve_val, data, headers, height, index, interp, interval, legend, legendItems, line_configs, margin, maxTicks, maxY, minTicks, minY, ref, svg, values, width, x, xExtent, y, yAxis, yTicks;
+        var absoluteMinY, col_colors, col_types, columns, curve_val, data, headers, height, index, interp, interval, legend, legendItems, line_configs, margin, maxTicks, maxY, minTicks, minY, ref, svg, values, width, x, xExtent, y, yAxis, yTicks;
         // console.log "TimeSeries::build_graph: entered"
         if ((ref = this.svgRef) != null ? ref.current : void 0) {
           console.log("TimeSeries::build_graph: is current");
@@ -27268,6 +27268,9 @@ TimeSeries = function () {
           col_types = columns.map(function (i) {
             return i.ColumnType;
           });
+          col_colors = columns.map(function (i) {
+            return i.ColumnColor;
+          });
           headers = columns.map(function (i) {
             return i.ColumnTitle;
           });
@@ -27278,14 +27281,6 @@ TimeSeries = function () {
 
           // Generate the line colors (exclude index)
           line_configs = getLineConfigs(headers.length - 1);
-          if (col_types[col_types.length - 1] === "average") {
-            line_configs[line_configs.length - 1].color = "red"; // replace the last color with black
-            line_configs[line_configs.length - 1].dash = ""; // replace the last color with black
-            line_configs[line_configs.length - 1].opacity = "1.0"; // replace the last color with black
-            line_configs[line_configs.length - 1].symbol = symbol_circle; // replace the last color with black
-          }
-          // console.log 'Line configs: ' + line_configs
-
           // Set up dimensions
           margin = {
             top: 40,
@@ -27327,11 +27322,11 @@ TimeSeries = function () {
           svg.append("text").attr("x", width / 2).attr("y", height + margin.bottom - 10).attr("text-anchor", "middle").style("font-size", "12px").text(this.props.item.time_series_graph_xaxis);
           // Y-axis
           interval = 5;
-          if (maxY - minY < 30) {
+          if (maxY - minY < 50) {
             interval = 2;
           }
           console.log("Y Axis: minY: ", minY, " absoluteMinY: ", absoluteMinY);
-          console.log("Y Axis: min: ", minY, " max: ", maxY);
+          console.log("Y Axis: min: ", minY, " max: ", maxY, " diff: ", maxY - minY);
           minTicks = minY - minY % interval + interval;
           maxTicks = maxY + maxY % interval + interval;
           console.log("Y Axis: min: ", minTicks, " max: ", maxTicks);
@@ -27353,17 +27348,18 @@ TimeSeries = function () {
           curve_val = d3_src_namespaceObject[interp];
           headers.slice(1).forEach(function (key, i) {
             var lineGen;
-            // console.debug('Main loop: ' + key + '  ' + i)
+            console.log('Main loop: ' + key + '  ' + i);
+            console.log('Main loop: ' + col_colors[i + 1]);
             lineGen = src_line().curve(curve_val).x(function (d) {
               return x(d[index]);
             }).y(function (d) {
               return y(d[key]);
             });
-            svg.append("path").datum(data).attr("fill", "none").attr("stroke-width", 2).attr("stroke", line_configs[i].color).attr("opacity", line_configs[i].opacity).attr("stroke-dasharray", line_configs[i].dash).attr("d", lineGen);
+            svg.append("path").datum(data).attr("fill", "none").attr("stroke-width", 2).attr("stroke", col_colors[i + 1]).attr("stroke-dasharray", line_configs[i].dash).attr("d", lineGen);
             // Add data points with different symbols
             return svg.selectAll(".symbol-".concat(i)).data(data).enter().append("path").attr("class", "symbol symbol-".concat(i)).attr("d", symbolGenerator.type(line_configs[i].symbol)).attr("transform", function (d) {
               return "translate(".concat(x(parseFloat(d[index])), ", ").concat(y(parseFloat(d[key])), ")");
-            }).style("fill", line_configs[i].color).style("opacity", line_configs[i].opacity);
+            }).style("fill", col_colors[i + 1]).attr("stroke", col_colors[i + 1]);
           });
           // Add legend
           legend = svg.append("g").attr("class", "legend").attr("transform", "translate(50, ".concat(height + 50, ")"));
@@ -27380,9 +27376,7 @@ TimeSeries = function () {
             return symbol_Symbol().type(line_configs[i].symbol).size(100)();
           }).attr("transform", "translate(9, 9)").style("fill", function (d, i) {
             // Center the symbol within the legend item
-            return line_configs[i].color;
-          }).style("opacity", function (d, i) {
-            return line_configs[i].opacity;
+            return col_colors[i + 1];
           });
           // Add legend text
           legendItems.append("text").attr("x", 24).attr("y", 9).attr("dy", "0.35em").style("font-size", "12px").text(function (d) {
@@ -27444,28 +27438,18 @@ TimeSeries = function () {
   getLineConfigs = function getLineConfigs(count) {
     var configs;
     configs = [{
-      color: "#666666",
-      opacity: 1.0,
       symbol: star,
       dash: ""
     }, {
-      color: "#666666",
-      opacity: 0.8,
       symbol: symbol_square,
       dash: ""
     }, {
-      color: "#666666",
-      opacity: 0.6,
       symbol: triangle,
       dash: ""
     }, {
-      color: "#666666",
-      opacity: 0.4,
       symbol: diamond,
       dash: ""
     }, {
-      color: "#666666",
-      opacity: 0.2,
       symbol: symbol_cross,
       dash: ""
     }];
