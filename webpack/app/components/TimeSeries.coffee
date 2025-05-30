@@ -72,6 +72,31 @@ class TimeSeries extends React.Component
     @build_graph()
 
   ###
+   * Calculate Y range
+  ###
+  get_Y_range: (minY, maxY) ->
+    # Y-axis
+    diffY = maxY - minY
+    interval = 0
+    if diffY > 70
+      interval = 10
+    else if diffY > 50
+      interval = 5
+    else if diffY > 20
+      interval = 2
+    else if diffY > 10
+      interval = 1
+    if interval > 0
+      minTicks = minY - (minY % interval) + interval
+      maxTicks = maxY + (maxY % interval) + interval
+      y_range = d3.range(minTicks, maxTicks, interval)
+    else
+      y_range = d3.range(minY, maxY)
+
+    console.log "Y Axis: min: ", minY, " max: ", maxY, " diffY: ", diffY, " interval: ", interval
+    y_range
+
+  ###
    * Converts the string value to an array
   ###
   to_matrix: (listString, headers, src) ->
@@ -267,7 +292,8 @@ class TimeSeries extends React.Component
 
       # Set up Y scale with trimmed domain
       absoluteMinY = d3.min(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
-      minY = absoluteMinY- (absoluteMinY * 0.1)
+      minY_factor = 0.05  # 20%
+      minY = absoluteMinY- (absoluteMinY * minY_factor)
       maxY = d3.max(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
 
       y = d3.scaleLinear()
@@ -310,17 +336,9 @@ class TimeSeries extends React.Component
         .text(@props.item.time_series_graph_xaxis)
 
       # Y-axis
-      interval = 5
-      if maxY - minY < 50
-        interval = 2
-      console.log "Y Axis: minY: ", minY, " absoluteMinY: ", absoluteMinY
-      console.log "Y Axis: min: ", minY, " max: ", maxY, " diff: ", maxY - minY
-      minTicks = minY - (minY % interval) + interval
-      maxTicks = maxY + (maxY % interval) + interval
-      console.log "Y Axis: min: ", minTicks, " max: ", maxTicks
-      yTicks = d3.range(minTicks, maxTicks, interval)
+      y_range = @get_Y_range(minY, maxY)
       yAxis = d3.axisLeft(y)
-        .tickValues(yTicks)
+        .tickValues(y_range)
         .tickSize(-width)  # Extend ticks across the chart width
 
       # Y-axis label
@@ -365,8 +383,8 @@ class TimeSeries extends React.Component
       curve_val = d3[interp]
 
       headers.slice(1).forEach((key, i) ->
-        console.log('Main loop: ' + key + '  ' + i)
-        console.log('Main loop: ' + col_colors[i+1])
+        # console.log('Main loop: ' + key + '  ' + i)
+        # console.log('Main loop: ' + col_colors[i+1])
         lineGen = d3.line()
           .curve(curve_val)
           .x((d) ->

@@ -27121,6 +27121,36 @@ TimeSeries = function () {
       }
 
       /*
+       * Calculate Y range
+       */
+    }, {
+      key: "get_Y_range",
+      value: function get_Y_range(minY, maxY) {
+        var diffY, interval, maxTicks, minTicks, y_range;
+        // Y-axis
+        diffY = maxY - minY;
+        interval = 0;
+        if (diffY > 70) {
+          interval = 10;
+        } else if (diffY > 50) {
+          interval = 5;
+        } else if (diffY > 20) {
+          interval = 2;
+        } else if (diffY > 10) {
+          interval = 1;
+        }
+        if (interval > 0) {
+          minTicks = minY - minY % interval + interval;
+          maxTicks = maxY + maxY % interval + interval;
+          y_range = range(minTicks, maxTicks, interval);
+        } else {
+          y_range = range(minY, maxY);
+        }
+        console.log("Y Axis: min: ", minY, " max: ", maxY, " diffY: ", diffY, " interval: ", interval);
+        return y_range;
+      }
+
+      /*
        * Converts the string value to an array
        */
     }, {
@@ -27253,7 +27283,7 @@ TimeSeries = function () {
     }, {
       key: "build_graph",
       value: function build_graph() {
-        var absoluteMinY, col_colors, col_types, columns, curve_val, data, headers, height, index, interp, interval, legend, legendItems, line_configs, margin, maxTicks, maxY, minTicks, minY, ref, svg, values, width, x, xExtent, y, yAxis, yTicks;
+        var absoluteMinY, col_colors, col_types, columns, curve_val, data, headers, height, index, interp, legend, legendItems, line_configs, margin, maxY, minY, minY_factor, ref, svg, values, width, x, xExtent, y, yAxis, y_range;
         // console.log "TimeSeries::build_graph: entered"
         if ((ref = this.svgRef) != null ? ref.current : void 0) {
           console.log("TimeSeries::build_graph: is current");
@@ -27301,7 +27331,8 @@ TimeSeries = function () {
               return parseFloat(row[header]);
             });
           }));
-          minY = absoluteMinY - absoluteMinY * 0.1;
+          minY_factor = 0.05; // 20%
+          minY = absoluteMinY - absoluteMinY * minY_factor;
           maxY = max(data.flatMap(function (row) {
             return headers.slice(1).map(function (header) {
               return parseFloat(row[header]);
@@ -27321,17 +27352,8 @@ TimeSeries = function () {
           // X-axis label
           svg.append("text").attr("x", width / 2).attr("y", height + margin.bottom - 10).attr("text-anchor", "middle").style("font-size", "12px").text(this.props.item.time_series_graph_xaxis);
           // Y-axis
-          interval = 5;
-          if (maxY - minY < 50) {
-            interval = 2;
-          }
-          console.log("Y Axis: minY: ", minY, " absoluteMinY: ", absoluteMinY);
-          console.log("Y Axis: min: ", minY, " max: ", maxY, " diff: ", maxY - minY);
-          minTicks = minY - minY % interval + interval;
-          maxTicks = maxY + maxY % interval + interval;
-          console.log("Y Axis: min: ", minTicks, " max: ", maxTicks);
-          yTicks = range(minTicks, maxTicks, interval);
-          yAxis = axisLeft(y).tickValues(yTicks).tickSize(-width); // Extend ticks across the chart width
+          y_range = this.get_Y_range(minY, maxY);
+          yAxis = axisLeft(y).tickValues(y_range).tickSize(-width); // Extend ticks across the chart width
 
           // Y-axis label
           svg.append("text").attr("transform", "rotate(-90)").attr("x", -height / 2).attr("y", -margin.left + 15).attr("text-anchor", "middle").style("font-size", "12px").text(this.props.item.time_series_graph_yaxis);
@@ -27348,8 +27370,8 @@ TimeSeries = function () {
           curve_val = d3_src_namespaceObject[interp];
           headers.slice(1).forEach(function (key, i) {
             var lineGen;
-            console.log('Main loop: ' + key + '  ' + i);
-            console.log('Main loop: ' + col_colors[i + 1]);
+            // console.log('Main loop: ' + key + '  ' + i)
+            // console.log('Main loop: ' + col_colors[i+1])
             lineGen = src_line().curve(curve_val).x(function (d) {
               return x(d[index]);
             }).y(function (d) {
