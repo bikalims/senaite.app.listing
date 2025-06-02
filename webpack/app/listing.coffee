@@ -7,6 +7,8 @@
 ###
 import React from "react"
 import ReactDOM from "react-dom"
+import { createRoot } from 'react-dom/client';
+import { v4 as uuidv4 } from "uuid"
 
 import ButtonBar from "./components/ButtonBar.coffee"
 import FilterBar from "./components/FilterBar.coffee"
@@ -18,6 +20,7 @@ import Pagination from "./components/Pagination.coffee"
 import SearchBox from "./components/SearchBox.coffee"
 import Table from "./components/Table.coffee"
 import TableColumnConfig from "./components/TableColumnConfig.coffee"
+import ToastNotification from "./components/Toast.js"
 
 import { DndProvider } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
@@ -37,12 +40,17 @@ document.addEventListener "DOMContentLoaded", ->
     window._t = (text, ...) -> text
 
   tables = document.getElementsByClassName "ajax-contents-table"
-  window.listings ?= {}
+
+  # ensure global namespace for listing controllers
+  # -> see componentDidMount for the reference
+  window.senaite ?= {}
+  window.senaite.core ?= {}
+  window.senaite.core.listings ?= {}
+
   for table in tables
-    form_id = table.dataset.form_id
-    controller = ReactDOM.render <ListingController root_el={table} />, table
-    # Keep a reference to the listing
-    window.listings[form_id] = controller
+    if not table._reactRootContainer?
+      table._reactRootContainer = createRoot(table)
+    table._reactRootContainer.render <ListingController root_el={table} />
 
 
 ###*
@@ -87,6 +95,8 @@ class ListingController extends React.Component
     @showRowMenu = @showRowMenu.bind @
     @handleRowMenuAction = @handleRowMenuAction.bind @
     @on_row_order_change = @on_row_order_change.bind @
+    @on_click = @on_click.bind @
+    @removeToast = @removeToast.bind @
 
     # root element
     @root_el = @props.root_el
@@ -208,6 +218,8 @@ class ListingController extends React.Component
       # progress bar
       progress: null
       progress_label: null
+      # toast notifications
+      toasts: []
 
   ###*
    * Translate the given i18n string
@@ -266,6 +278,116 @@ class ListingController extends React.Component
     return true
 
   ###*
+   * Show Bootstrap Toast notification
+   *
+   * @param message {string} message to show
+   * @param title {string} title to show
+  ###
+  showToast: (message, title=_t("Notification")) ->
+    toast =
+      id: uuidv4()
+      title: title
+      message: message
+    @setState (prevState) ->
+      toasts: [...prevState.toasts, toast]
+
+    # remove message after 5 seconds
+    remove = () =>
+      console.log "Remove toast ID #{toast.id}"
+      @removeToast(toast.id)
+    setTimeout(remove, 5000)
+
+  ###*
+   * Remove Bootstrap Toast notification by ID
+   *
+   * @param id {string} ID of the message
+  ###
+  removeToast: (id) ->
+    @setState (prevState) ->
+      toasts: prevState.toasts.filter (toast) -> toast.id isnt id
+
+
+  ###*
+   * Show element loader
+   *
+   * This method renders an overlay in the element with an animated loader
+   *
+   * @param element {Object} The loading element
+  ###
+  showLoader: (el = "body") ->
+    loader = $('<div class="loader-overlay d-flex justify-content-center align-items-center">
+                  <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+                </div>')
+    loader.css
+      position: "absolute"
+      top: 0
+      left: 0
+      width: "100%"
+      height: "100%"
+      background: "rgba(255, 255, 255, 0.5)"
+      zIndex: 1051
+    # always hide any existing loaders first
+    @hideLoader()
+    $(el).css("position", "relative").append(loader)
+
+
+  ###*
+   * Hide element loader
+   *
+   * This method removes the loader from the modal
+   *
+   * @param element {Object} The loading element
+  ###
+  hideLoader: (el = "body") ->
+    $(el).find('.loader-overlay').remove()
+
+
+  ###*
+   * Set the cursor to loading
+   *
+   * This method changes the cursor to a loading cursor
+   *
+   * @param element {Object} The loading element
+  ###
+  setLoadingCursor: (el = "body") ->
+    $(el).css("cursor", "wait")
+
+
+  ###*
+   * Unset the cursor to loading
+   *
+   * This method changes the loading cursor back to normal
+   *
+   * @param element {Object} The loading element
+  ###
+  resetLoadingCursor: (el = "body") ->
+    $(el).css("cursor", "")
+
+
+  ###*
+   * Load a listing action asynchronously
+   *
+   * @param url {string} URL to load
+   * @param reload {boolean} reload folderitems if true
+  ###
+  ajaxLoadActionURL: (url, reload=yes) ->
+    me = this
+
+    # turn loader on
+    @toggle_loader on
+
+    fetch(url, { method: "GET" })
+      .then (response) ->
+        return response.json()
+      .then (json) ->
+        if reload then me.fetch_folderitems()
+        me.showToast(json.message, title=json.title)
+        me.toggle_loader off
+      .catch (error) ->
+        me.showToast("Action failed: ", error)
+        me.toggle_loader off
+
+  ###*
    * Parameters to be sent in each Ajax POST request
    * @returns {object} current state values
   ###
@@ -288,13 +410,22 @@ class ListingController extends React.Component
   ###
   componentDidMount: ->
     window.addEventListener("popstate", @on_popstate, false);
-    @fetch_folderitems()
+    @fetch_folderitems().then (data) =>
+      # send a listing loaded event as soon as the folderitems are initially loaded
+      @trigger_event "listing:loaded",
+       form_id: @form_id
+       root_el: @root_el
+       data: data
+    @root_el.addEventListener("click", @on_click)
+    window.senaite.core.listings[@form_id] = @
+
 
   ###*
    * ReactJS event handler when the component unmounts
   ###
   componentWillUnmount: ->
     window.removeEventListener("popstate", @on_popstate, false);
+    @root_el.removeEventListener("click", @on_click)
 
   ###*
    * componentDidUpdate(prevProps, prevState, snapshot)
@@ -560,6 +691,9 @@ class ListingController extends React.Component
   showRowMenu: (event, item) ->
     event.preventDefault()
 
+    # show a loading cursor
+    @setLoadingCursor(@root_el)
+
     # https://fkhadra.github.io/react-contexify/api/use-context-menu
     menu = useContextMenu({
       id: @row_context_menu_id
@@ -634,12 +768,16 @@ class ListingController extends React.Component
         new_state["transitions"] = []
 
       # set the new state and show the context menu afterwards
-      @setState new_state, ->
+      @setState new_state, =>
+        # show a loading cursor
+        @resetLoadingCursor(@root_el)
         # show the context menu
-        menu.show(
-          event: event
-          props:
-            item: item
+        queueMicrotask(() =>
+          menu.show(
+            event: event
+            props:
+              item: item
+          )
         )
 
   ###*
@@ -993,6 +1131,9 @@ class ListingController extends React.Component
   loadModal: (url, selected_uids) ->
     el = $("#modal_#{@form_id}")
 
+    # make it draggable
+    el.draggable()
+
     # allow to override selected uids
     selected_uids ?= @state.selected_uids
 
@@ -1003,12 +1144,14 @@ class ListingController extends React.Component
     on_submit = (event) =>
       event.preventDefault()
       form = event.target
-      # always hide the modal on submit
-      el.modal("hide")
 
       if not form.action
         console.error "Modal form has no action defined"
         return
+
+      # show the loader in the modal content
+      content = el.find(".modal-content")
+      @showLoader(content)
 
       # process form submit
       fetch form.action,
@@ -1024,7 +1167,11 @@ class ListingController extends React.Component
           else
             @fetch_folderitems()
       .catch (error) =>
-        console.error(error)
+        @on_api_error(error)
+      .finally =>
+        # always hide the loader and modal
+        @hideLoader(content)
+        el.modal("hide")
 
     request = new Request(url)
     fetch(request)
@@ -1140,6 +1287,7 @@ class ListingController extends React.Component
           @toggleUIDLoading uid, on
           api_call = @api.do_action_for
             uids: [uid]
+            chained_uids: uids
             transition: transition
           api_call.then (data) =>
             # handle eventual errors
@@ -1855,6 +2003,11 @@ class ListingController extends React.Component
     # lookup child_uids from the folderitem
     if not child_uids
       by_uid = @group_by_uid()
+
+      # include folderitems of children to allow nested toggles
+      for uid, childitems of @state.children
+        by_uid = Object.assign({}, by_uid, @group_by_uid(childitems))
+
       child_uids = []
       if parent_uid of by_uid
         folderitem = by_uid[parent_uid]
@@ -2059,6 +2212,18 @@ class ListingController extends React.Component
    *      https://reactjs.org/docs/handling-events.html
   ###
 
+  on_click: (event) ->
+    console.debug "°°° ListingController::on_click"
+
+    target = event.target
+    link = target.closest "a"
+
+    # asynchornously load the link URL and reload the table
+    if link and link.classList.contains("listing-ajax-action")
+      event.preventDefault()
+      url = link.href
+      @ajaxLoadActionURL(url, reload=yes)
+
   on_column_config_click: (event) ->
     event.preventDefault()
     return unless @state.show_column_toggles
@@ -2199,6 +2364,11 @@ class ListingController extends React.Component
 
     return (
       <DndProvider backend={HTML5Backend}>
+        <div style={{ position: "fixed", top: "1rem", right: "1rem", zIndex: 1050 }}>
+          { @state.toasts.map (toast) =>
+            <ToastNotification key={toast.id} id={toast.id} message={toast.message} title={toast.title or "Info"} onClose={@removeToast} />
+          }
+        </div>
         <div className="listing-container">
           <Modal className="modal fade" id="modal_#{@form_id}" />
           <Messages on_dismiss_message={@dismissMessage} id="messages" className="messages" messages={@state.messages} />

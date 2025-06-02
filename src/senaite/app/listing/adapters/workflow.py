@@ -15,7 +15,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright 2018-2024 by it's authors.
+# Copyright 2018-2025 by it's authors.
 # Some rights reserved, see README and LICENSE.
 
 from bika.lims import api
@@ -61,8 +61,15 @@ class ListingWorkflowTransition(object):
         """
         return [api.get_uid(self.context)]
 
-    def do_transition(self, transition):
+    def do_transition(self, transition,
+                      chained_uids,
+                      failed_transitions, **kw):
         """Execute the workflow transition
+
+        :param transition: Name of the transition to perform, e.g. 'verify'
+        :param chained_uids: All UIDs that are chained for this transition
+        :param failed_transitions: Number of previously failed transitions in
+                                   the chain of UIDs
         """
         obj = self.context
         oid = api.get_id(obj)

@@ -342,7 +342,7 @@ class TableCell extends React.Component
 
     return (
       <CalculatedField
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={name}
@@ -424,7 +424,7 @@ class TableCell extends React.Component
 
     return (
       <NumericField
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={fieldname}
@@ -480,7 +480,7 @@ class TableCell extends React.Component
 
     return (
       <StringField
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={fieldname}
@@ -536,7 +536,7 @@ class TableCell extends React.Component
 
     return (
       <TextField
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={fieldname}
@@ -592,7 +592,7 @@ class TableCell extends React.Component
 
     return (
       <FractionField
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={fieldname}
@@ -660,7 +660,7 @@ class TableCell extends React.Component
 
     return (
       <DateTime
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={fieldname}
@@ -723,7 +723,7 @@ class TableCell extends React.Component
 
     return (
       <Select
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={fieldname}
@@ -779,7 +779,7 @@ class TableCell extends React.Component
 
     return (
       <MultiChoice
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={fieldname}
@@ -836,7 +836,7 @@ class TableCell extends React.Component
 
     return (
       <MultiSelect
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={fieldname}
@@ -893,7 +893,7 @@ class TableCell extends React.Component
 
     return (
       <MultiValue
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={fieldname}
@@ -1008,7 +1008,7 @@ class TableCell extends React.Component
 
     return (
       <Checkbox
-        key={name}
+        key={name + formatted_value}
         uid={uid}
         item={item}
         name={fieldname}

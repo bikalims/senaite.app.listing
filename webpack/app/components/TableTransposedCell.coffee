@@ -222,7 +222,7 @@ class TableTransposedCell extends TableCell
           fields = fields.concat @create_numeric_field props:props
         else if type == "string"
           fields = fields.concat @create_string_field props:props
-        else if type == "datetime"
+        else if type in ["date", "datetime"]
           fields = fields.concat @create_datetime_field props:props
         else if type == "fraction"
           fields = fields.concat @create_fraction_field props:props
@@ -335,7 +335,7 @@ class TableTransposedCell extends TableCell
         result_field = @create_numeric_field props:props
       else if type == "string"
         result_field = @create_string_field props:props
-      else if type == "datetime"
+      else if type in ["date", "datetime"]
         result_field = @create_datetime_field props:props
       else if type == "fraction"
         result_field = @create_fraction_field props:props
@@ -393,7 +393,7 @@ class TableTransposedCell extends TableCell
             {not @has_interimfields() and @get_resultfield_title()}
           </div>
           {@has_interimfields() and
-            <div class="collapse p-1 my-2 border rounded" id="interims_#{@get_uid()}">
+            <div className="collapse p-1 my-2 border rounded" id="interims_#{@get_uid()}">
               <div className="small text-secondary border-bottom mb-2">{window._t("Result variables")}</div>
               {@render_interims()}
             </div>

@@ -1,6 +1,21 @@
-2.6.0 (unreleased)
+2.7.0 (unreleased)
 ------------------
 
+- #156 Update ReactJS 18 -> 19
+- #155 Show modal and context menu loaders
+- #154 Change namespace for listings
+- #153 Trigger custom event after folderitems are initially loaded
+
+
+2.6.0 (2025-04-04)
+------------------
+
+- #151 Rerender field components if the server value changed
+- #150 Fix date widget not working for `date` type component
+- #149 Allow ajax listing actions
+- #148 Fix rendering of nested folderitems
+- #147 Append last commit hash to js and css filenames in production mode
+- #146 Annotate the UID chain for sequential transitions on the request
 - #145 Allow Result Description for Select Fields
 - #144 Added TextField React component for listings
 - #143 Allow date only fields in listings

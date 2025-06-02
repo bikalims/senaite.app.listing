@@ -15,7 +15,7 @@
 # this program; if not, write to the Free Software Foundation, Inc., 51
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Copyright 2018-2024 by it's authors.
+# Copyright 2018-2025 by it's authors.
 # Some rights reserved, see README and LICENSE.
 
 import inspect
@@ -541,17 +541,19 @@ class AjaxListingView(BrowserView):
         # Get the HTTP POST JSON Payload
         payload = self.get_json()
 
-        required = ["uids", "transition"]
+        required = ["uids", "transition", "chained_uids"]
         if not all(map(lambda k: k in payload, required)):
             return self.json_message("Payload needs to provide the keys {}"
                                      .format(", ".join(required)), status=400)
 
         uids = payload.get("uids")
+        chained_uids = payload.get("chained_uids")
         transition = payload.get("transition")
 
         errors = {}
         redirects = {}
         affected_uids = set(uids)
+        failed_transitions = 0
 
         for uid in uids:
             obj = api.get_object_by_uid(uid)
@@ -568,10 +570,13 @@ class AjaxListingView(BrowserView):
                     interface=IListingWorkflowTransition)
 
             # execute the transition
-            adapter.do_transition(transition)
+            adapter.do_transition(transition,
+                                  chained_uids=chained_uids,
+                                  failed_transitions=failed_transitions)
 
             # collect errors
             if adapter.failed:
+                failed_transitions += 1
                 errors[uid] = adapter.get_error()
 
             # collect redirects
