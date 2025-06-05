@@ -46,8 +46,13 @@
     },
     "overrides": [
       {
-        "files": ["webpack.config.js", "webpack.*.js"],
-        "env": { "node": true },
+        "files": [
+          "webpack.config.js",
+          "webpack.*.js"
+        ],
+        "env": {
+          "node": true
+        },
         "parserOptions": {
           "sourceType": "script"
         }
@@ -58,13 +63,13 @@
   "license": "GPL-2.0-only",
   "dependencies": {
     "@babel/runtime": "^7.27.1",
+    "d3": "*",
     "react": "^19.1.0",
     "react-contexify": "^6.0.0",
-    "react-dom": "^19.1.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
-    "uuid": "^11.1.0",
-    "d3": "*"
+    "react-dom": "^19.1.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",
