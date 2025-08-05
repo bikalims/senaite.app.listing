@@ -126,7 +126,6 @@ class TimeSeries extends React.Component
             else
               console.error 'to_matrix: unknown src ' + src
 
-
     matrix
 
 
@@ -179,7 +178,7 @@ class TimeSeries extends React.Component
       cnt += 1
       # Create list of TDs
       td_elements = []
-      # console.log "Row = " + row
+      console.log "Row = " + row
       for key, value of row
         val = value['val']
         OOR = value['OOR']
@@ -388,14 +387,22 @@ class TimeSeries extends React.Component
         lineGen = d3.line()
           .curve(curve_val)
           .x((d) ->
-            x(d[index])
+            xVal = x(d[index])
+            console.log("x value:", d[index], "->", xVal)
+            xVal
           )
           .y((d) ->
-            y(d[key])
+            yVal = y(d[key])
+            console.log("y value:", d[key], "->", yVal)
+            yVal
           )
 
+        # Filter out empty items before generating the line
+        filteredData = data.filter((d) ->
+          d[index]? and d[key]? and d[index] != "" and d[key] != ""
+        )
         svg.append("path")
-          .datum(data)
+          .datum(filteredData)
           .attr("fill", "none")
           .attr("stroke-width", 2)
           .attr("stroke", col_colors[i+1])

@@ -44826,7 +44826,7 @@ TimeSeries = function () {
           cnt += 1;
           // Create list of TDs
           td_elements = [];
-          // console.log "Row = " + row
+          console.log("Row = " + row);
           for (key in row) {
             value = row[key];
             val = value['val'];
@@ -44957,15 +44957,25 @@ TimeSeries = function () {
           interp = this.props.item.time_series_graph_interpolation;
           curve_val = d3_src_namespaceObject[interp];
           headers.slice(1).forEach(function (key, i) {
-            var lineGen;
+            var filteredData, lineGen;
             // console.log('Main loop: ' + key + '  ' + i)
             // console.log('Main loop: ' + col_colors[i+1])
             lineGen = src_line().curve(curve_val).x(function (d) {
-              return x(d[index]);
+              var xVal;
+              xVal = x(d[index]);
+              console.log("x value:", d[index], "->", xVal);
+              return xVal;
             }).y(function (d) {
-              return y(d[key]);
+              var yVal;
+              yVal = y(d[key]);
+              console.log("y value:", d[key], "->", yVal);
+              return yVal;
             });
-            svg.append("path").datum(data).attr("fill", "none").attr("stroke-width", 2).attr("stroke", col_colors[i + 1]).attr("stroke-dasharray", line_configs[i].dash).attr("d", lineGen);
+            // Filter out empty items before generating the line
+            filteredData = data.filter(function (d) {
+              return d[index] != null && d[key] != null && d[index] !== "" && d[key] !== "";
+            });
+            svg.append("path").datum(filteredData).attr("fill", "none").attr("stroke-width", 2).attr("stroke", col_colors[i + 1]).attr("stroke-dasharray", line_configs[i].dash).attr("d", lineGen);
             // Add data points with different symbols
             return svg.selectAll(".symbol-".concat(i)).data(data).enter().append("path").attr("class", "symbol symbol-".concat(i)).attr("d", symbolGenerator.type(line_configs[i].symbol)).attr("transform", function (d) {
               return "translate(".concat(x(parseFloat(d[index])), ", ").concat(y(parseFloat(d[key])), ")");
@@ -57198,4 +57208,4 @@ ListingController = /*#__PURE__*/function (_React$Component) {
 }(react.Component);
 /******/ })()
 ;
-//# sourceMappingURL=senaite.app.listing.6256887c17fedfeed719.js.map
+//# sourceMappingURL=senaite.app.listing.1a0d8a213ba540196dce.js.map
