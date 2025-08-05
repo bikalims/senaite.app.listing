@@ -387,17 +387,13 @@ class TimeSeries extends React.Component
         lineGen = d3.line()
           .curve(curve_val)
           .x((d) ->
-            xVal = x(d[index])
-            console.log("x value:", d[index], "->", xVal)
-            xVal
+            x(d[index])
           )
           .y((d) ->
-            yVal = y(d[key])
-            console.log("y value:", d[key], "->", yVal)
-            yVal
+            y(d[key])
           )
 
-        # Filter out empty items before generating the line
+        # Filter out empty items before generating the lines
         filteredData = data.filter((d) ->
           d[index]? and d[key]? and d[index] != "" and d[key] != ""
         )

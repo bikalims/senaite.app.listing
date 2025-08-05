@@ -44961,17 +44961,11 @@ TimeSeries = function () {
             // console.log('Main loop: ' + key + '  ' + i)
             // console.log('Main loop: ' + col_colors[i+1])
             lineGen = src_line().curve(curve_val).x(function (d) {
-              var xVal;
-              xVal = x(d[index]);
-              console.log("x value:", d[index], "->", xVal);
-              return xVal;
+              return x(d[index]);
             }).y(function (d) {
-              var yVal;
-              yVal = y(d[key]);
-              console.log("y value:", d[key], "->", yVal);
-              return yVal;
+              return y(d[key]);
             });
-            // Filter out empty items before generating the line
+            // Filter out empty items before generating the lines
             filteredData = data.filter(function (d) {
               return d[index] != null && d[key] != null && d[index] !== "" && d[key] !== "";
             });
@@ -57208,4 +57202,4 @@ ListingController = /*#__PURE__*/function (_React$Component) {
 }(react.Component);
 /******/ })()
 ;
-//# sourceMappingURL=senaite.app.listing.1a0d8a213ba540196dce.js.map
+//# sourceMappingURL=senaite.app.listing.e70779292b5985ad885e.js.map
