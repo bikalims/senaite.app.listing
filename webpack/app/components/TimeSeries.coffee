@@ -313,6 +313,7 @@ class TimeSeries extends React.Component
         .attr("transform", "translate(#{margin.left},#{margin.top})")
 
       # Graph title
+      console.log 'Title: ' + @props.item.time_series_graph_title
       svg.append("text")
         .attr("x", width / 2)
         .attr("y", -margin.top / 2)
@@ -382,8 +383,9 @@ class TimeSeries extends React.Component
       curve_val = d3[interp]
 
       headers.slice(1).forEach((key, i) ->
-        # console.log('Main loop: ' + key + '  ' + i)
-        # console.log('Main loop: ' + col_colors[i+1])
+        console.log('Main loop: ' + key + '  ' + i)
+        console.log('Main loop: ' + col_colors[i+1])
+        line_config_idx = i % line_configs.length
         lineGen = d3.line()
           .curve(curve_val)
           .x((d) ->
@@ -402,15 +404,15 @@ class TimeSeries extends React.Component
           .attr("fill", "none")
           .attr("stroke-width", 2)
           .attr("stroke", col_colors[i+1])
-          .attr("stroke-dasharray", line_configs[i].dash)
+          .attr("stroke-dasharray", line_configs[line_config_idx].dash)
           .attr("d", lineGen)
 
         # Add data points with different symbols
         svg.selectAll(".symbol-#{i}")
-          .data(data)
+          .data(filteredData)
           .enter().append("path")
           .attr("class", "symbol symbol-#{i}")
-          .attr("d", symbolGenerator.type(line_configs[i].symbol))
+          .attr("d", symbolGenerator.type(line_configs[line_config_idx].symbol))
           .attr("transform", (d) ->
             "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
           )
@@ -436,7 +438,8 @@ class TimeSeries extends React.Component
       # Add legend color symbols
       legendItems.append("path")
         .attr("d", (d, i) ->
-          d3.symbol().type(line_configs[i].symbol).size(100)()
+          line_config_idx = i % line_configs.length
+          d3.symbol().type(line_configs[line_config_idx].symbol).size(100)()
         )
         .attr("transform", "translate(9, 9)")  # Center the symbol within the legend item
         .style("fill", (d, i) -> col_colors[i+1])

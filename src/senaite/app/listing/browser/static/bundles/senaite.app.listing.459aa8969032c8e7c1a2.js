@@ -44934,6 +44934,7 @@ TimeSeries = function () {
           svg.selectAll('*').remove();
           svg = svg.attr("width", width + margin.left + margin.right).attr("height", height + margin.top + margin.bottom).append("g").attr("transform", "translate(".concat(margin.left, ",").concat(margin.top, ")"));
           // Graph title
+          console.log('Title: ' + this.props.item.time_series_graph_title);
           svg.append("text").attr("x", width / 2).attr("y", -margin.top / 2).attr("text-anchor", "middle").style("font-size", "16px").style("font-weight", "bold").text(this.props.item.time_series_graph_title);
           // X-axis
           svg.append("g").attr("transform", "translate(0,".concat(height, ")")).call(axisBottom(x));
@@ -44957,9 +44958,10 @@ TimeSeries = function () {
           interp = this.props.item.time_series_graph_interpolation;
           curve_val = d3_src_namespaceObject[interp];
           headers.slice(1).forEach(function (key, i) {
-            var filteredData, lineGen;
-            // console.log('Main loop: ' + key + '  ' + i)
-            // console.log('Main loop: ' + col_colors[i+1])
+            var filteredData, lineGen, line_config_idx;
+            console.log('Main loop: ' + key + '  ' + i);
+            console.log('Main loop: ' + col_colors[i + 1]);
+            line_config_idx = i % line_configs.length;
             lineGen = src_line().curve(curve_val).x(function (d) {
               return x(d[index]);
             }).y(function (d) {
@@ -44969,9 +44971,9 @@ TimeSeries = function () {
             filteredData = data.filter(function (d) {
               return d[index] != null && d[key] != null && d[index] !== "" && d[key] !== "";
             });
-            svg.append("path").datum(filteredData).attr("fill", "none").attr("stroke-width", 2).attr("stroke", col_colors[i + 1]).attr("stroke-dasharray", line_configs[i].dash).attr("d", lineGen);
+            svg.append("path").datum(filteredData).attr("fill", "none").attr("stroke-width", 2).attr("stroke", col_colors[i + 1]).attr("stroke-dasharray", line_configs[line_config_idx].dash).attr("d", lineGen);
             // Add data points with different symbols
-            return svg.selectAll(".symbol-".concat(i)).data(data).enter().append("path").attr("class", "symbol symbol-".concat(i)).attr("d", symbolGenerator.type(line_configs[i].symbol)).attr("transform", function (d) {
+            return svg.selectAll(".symbol-".concat(i)).data(filteredData).enter().append("path").attr("class", "symbol symbol-".concat(i)).attr("d", symbolGenerator.type(line_configs[line_config_idx].symbol)).attr("transform", function (d) {
               return "translate(".concat(x(parseFloat(d[index])), ", ").concat(y(parseFloat(d[key])), ")");
             }).style("fill", col_colors[i + 1]).attr("stroke", col_colors[i + 1]);
           });
@@ -44987,7 +44989,9 @@ TimeSeries = function () {
           });
           // Add legend color symbols
           legendItems.append("path").attr("d", function (d, i) {
-            return symbol_Symbol().type(line_configs[i].symbol).size(100)();
+            var line_config_idx;
+            line_config_idx = i % line_configs.length;
+            return symbol_Symbol().type(line_configs[line_config_idx].symbol).size(100)();
           }).attr("transform", "translate(9, 9)").style("fill", function (d, i) {
             // Center the symbol within the legend item
             return col_colors[i + 1];
@@ -57202,4 +57206,4 @@ ListingController = /*#__PURE__*/function (_React$Component) {
 }(react.Component);
 /******/ })()
 ;
-//# sourceMappingURL=senaite.app.listing.e70779292b5985ad885e.js.map
+//# sourceMappingURL=senaite.app.listing.459aa8969032c8e7c1a2.js.map
