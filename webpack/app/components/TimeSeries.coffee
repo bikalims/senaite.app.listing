@@ -84,8 +84,12 @@ class TimeSeries extends React.Component
       interval = 5
     else if diffY > 20
       interval = 2
-    else if diffY > 10
+    else if diffY > 5
       interval = 1
+    else if diffY > 1
+      interval = 0.5
+    else
+      interval = 0.1
     if interval > 0
       minTicks = minY - (minY % interval) + interval
       maxTicks = maxY + (maxY % interval) + interval
@@ -125,7 +129,6 @@ class TimeSeries extends React.Component
                 row[header] = parseFloat(row[header])
             else
               console.error 'to_matrix: unknown src ' + src
-
 
     matrix
 
@@ -179,7 +182,7 @@ class TimeSeries extends React.Component
       cnt += 1
       # Create list of TDs
       td_elements = []
-      # console.log "Row = " + row
+      console.log "Row = " + row
       for key, value of row
         val = value['val']
         OOR = value['OOR']
@@ -296,8 +299,9 @@ class TimeSeries extends React.Component
       minY = absoluteMinY- (absoluteMinY * minY_factor)
       maxY = d3.max(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
 
+      yExtent = d3.extent([Math.floor(minY), Math.ceil(maxY)])  # Trim domain to just cover data range
       y = d3.scaleLinear()
-        .domain([Math.floor(minY), Math.ceil(maxY)])  # Trim domain to just cover data range
+        .domain(yExtent)
         .range([height, 0])
 
       # Create SVG container
@@ -314,6 +318,7 @@ class TimeSeries extends React.Component
         .attr("transform", "translate(#{margin.left},#{margin.top})")
 
       # Graph title
+      console.log 'Title: ' + @props.item.time_series_graph_title
       svg.append("text")
         .attr("x", width / 2)
         .attr("y", -margin.top / 2)
@@ -382,9 +387,11 @@ class TimeSeries extends React.Component
       interp = @props.item.time_series_graph_interpolation
       curve_val = d3[interp]
 
+      # Draw each line
       headers.slice(1).forEach((key, i) ->
-        # console.log('Main loop: ' + key + '  ' + i)
-        # console.log('Main loop: ' + col_colors[i+1])
+        console.log('Main loop: ' + key + '  ' + i)
+        console.log('Main loop: ' + col_colors[i+1])
+        line_config_idx = i % line_configs.length
         lineGen = d3.line()
           .curve(curve_val)
           .x((d) ->
@@ -394,20 +401,24 @@ class TimeSeries extends React.Component
             y(d[key])
           )
 
+        # Filter out empty items before generating the lines
+        filteredData = data.filter((d) ->
+          d[index]? and d[key]? and d[index] != "" and d[key] != ""
+        )
         svg.append("path")
-          .datum(data)
+          .datum(filteredData)
           .attr("fill", "none")
           .attr("stroke-width", 2)
           .attr("stroke", col_colors[i+1])
-          .attr("stroke-dasharray", line_configs[i].dash)
+          .attr("stroke-dasharray", line_configs[line_config_idx].dash)
           .attr("d", lineGen)
 
         # Add data points with different symbols
         svg.selectAll(".symbol-#{i}")
-          .data(data)
+          .data(filteredData)
           .enter().append("path")
           .attr("class", "symbol symbol-#{i}")
-          .attr("d", symbolGenerator.type(line_configs[i].symbol))
+          .attr("d", symbolGenerator.type(line_configs[line_config_idx].symbol))
           .attr("transform", (d) ->
             "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
           )
@@ -433,7 +444,8 @@ class TimeSeries extends React.Component
       # Add legend color symbols
       legendItems.append("path")
         .attr("d", (d, i) ->
-          d3.symbol().type(line_configs[i].symbol).size(100)()
+          line_config_idx = i % line_configs.length
+          d3.symbol().type(line_configs[line_config_idx].symbol).size(100)()
         )
         .attr("transform", "translate(9, 9)")  # Center the symbol within the legend item
         .style("fill", (d, i) -> col_colors[i+1])
