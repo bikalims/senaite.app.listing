@@ -289,19 +289,23 @@ class TimeSeries extends React.Component
 
       # Set up scales
       xExtent = d3.extent(data, (d) -> parseFloat(d[index]))
-      x = d3.scaleLinear()
+      xScale = d3.scaleLinear()
         .domain(xExtent)
         .range([0, width])
 
       # Set up Y scale with trimmed domain
       absoluteMinY = d3.min(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
-      minY_factor = 0.05  # 20%
-      minY = absoluteMinY- (absoluteMinY * minY_factor)
+      if absoluteMinY > 0
+        minY = absoluteMinY * 0.95
+      else
+        minY = absoluteMinY * 1.05
+
       maxY = d3.max(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
 
-      yExtent = d3.extent([Math.floor(minY), Math.ceil(maxY)])  # Trim domain to just cover data range
-      y = d3.scaleLinear()
-        .domain(yExtent)
+      console.log('minY: ' + minY + ' maxY: ' + maxY + " height: " + height)
+      yScale = d3.scaleLinear()
+        .domain([minY, maxY])
+        .nice()  # expands domain to "nice" human-friendly values
         .range([height, 0])
 
       # Create SVG container
@@ -330,7 +334,7 @@ class TimeSeries extends React.Component
       # X-axis
       svg.append("g")
         .attr("transform", "translate(0,#{height})")
-        .call(d3.axisBottom(x))
+        .call(d3.axisBottom(xScale))
 
       # X-axis label
       svg.append("text")
@@ -340,11 +344,6 @@ class TimeSeries extends React.Component
         .style("font-size", "12px")
         .text(@props.item.time_series_graph_xaxis)
 
-      # Y-axis
-      y_range = @get_Y_range(minY, maxY)
-      yAxis = d3.axisLeft(y)
-        .tickValues(y_range)
-        .tickSize(-width)  # Extend ticks across the chart width
 
       # Y-axis label
       svg.append("text")
@@ -353,23 +352,25 @@ class TimeSeries extends React.Component
         .attr("y", -margin.left + 15)
         .attr("text-anchor", "middle")
         .style("font-size", "12px")
-        .text(@props.item.time_series_graph_yaxis)
+        .text(this.props.item.time_series_graph_yaxis)
 
-      # Add horizontal grid lines
+      # y-axis horizontal grid lines
       svg.append("g")
-        .attr("class", "grid horizontal")
-        .attr("transform", "translate(0, 0)")
-        .call(yAxis)
-        .selectAll("line")
-        .style("stroke", "#999")  # Lighter gray
-        .style("opacity", 0.4)       # Adjust transparency
+          .attr("class", "grid horizontal")
+          .call(
+            d3.axisLeft(yScale)
+              .tickSize(-width)  # Extend ticks across the chart width
+          )
+          .selectAll("line")
+          .style("stroke", "#999")  # Lighter gray
+          .style("opacity", 0.8)       # Adjust transparency
 
       # Add vertical grid lines
       svg.append("g")
         .attr("class", "grid vertical")
         .attr("transform", "translate(0, #{height})")
         .call(
-          d3.axisBottom(x)
+          d3.axisBottom(xScale)
             .tickSize(-height)  # Extend ticks across the chart height
             .tickFormat("")     # Remove tick labels
         )
@@ -381,7 +382,7 @@ class TimeSeries extends React.Component
       # Draw axes
       svg.append("g")
         .attr("transform", "translate(0,#{height})")
-        .call(d3.axisBottom(x))
+        .call(d3.axisBottom(xScale))
 
       # Get interpolation
       interp = @props.item.time_series_graph_interpolation
@@ -395,10 +396,10 @@ class TimeSeries extends React.Component
         lineGen = d3.line()
           .curve(curve_val)
           .x((d) ->
-            x(d[index])
+            xScale(d[index])
           )
           .y((d) ->
-            y(d[key])
+            yScale(d[key])
           )
 
         # Filter out empty items before generating the lines
@@ -420,7 +421,7 @@ class TimeSeries extends React.Component
           .attr("class", "symbol symbol-#{i}")
           .attr("d", symbolGenerator.type(line_configs[line_config_idx].symbol))
           .attr("transform", (d) ->
-            "translate(#{x(parseFloat(d[index]))}, #{y(parseFloat(d[key]))})"
+            "translate(#{xScale(parseFloat(d[index]))}, #{yScale(parseFloat(d[key]))})"
           )
           .style("fill", col_colors[i+1])
           .attr("stroke", col_colors[i+1])
