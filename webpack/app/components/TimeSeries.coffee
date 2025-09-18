@@ -271,9 +271,12 @@ class TimeSeries extends React.Component
 
       # Get datasets
       columns = @props.item.time_series_columns
-      col_types = columns.map (i) -> i.ColumnType
-      col_colors = columns.map (i) -> i.ColumnColor
-      headers = columns.map (i) -> i.ColumnTitle
+      visible_cols = columns.filter (i) -> i.ColumnHide != 'on'
+      if visible_cols.length == 0
+        return
+      col_types = visible_cols.map (i) -> i.ColumnType
+      col_colors = visible_cols.map (i) -> i.ColumnColor
+      headers = visible_cols.map (i) -> i.ColumnTitle
       index = headers[0]
       # console.log 'Graph raw data: ' + values
       data = @to_matrix(values, headers, 'graph')
@@ -298,7 +301,7 @@ class TimeSeries extends React.Component
       if absoluteMinY > 0
         minY = absoluteMinY * 0.95
       else
-        minY = absoluteMinY * 1.05
+        minY = absoluteMinY * 1.1
 
       maxY = d3.max(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
 
