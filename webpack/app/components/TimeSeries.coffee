@@ -301,7 +301,7 @@ class TimeSeries extends React.Component
       if absoluteMinY > 0
         minY = absoluteMinY * 0.95
       else
-        minY = absoluteMinY * 1.1
+        minY = absoluteMinY * 1.05
 
       maxY = d3.max(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
 
