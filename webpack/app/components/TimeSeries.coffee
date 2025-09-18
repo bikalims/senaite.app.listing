@@ -144,7 +144,7 @@ class TimeSeries extends React.Component
     header_len = headers.length
     # console.log 'build_rows: header len = ' + header_len
     values = @props.item.time_series_values
-    # console.log 'build_rows: values = ' + values
+    console.log 'build_rows: values = ' + values
     matrix = @to_matrix(values, headers, 'table')
 
     # Build the rows
@@ -186,7 +186,7 @@ class TimeSeries extends React.Component
       for key, value of row
         val = value['val']
         OOR = value['OOR']
-        if isNaN(val)
+        if typeof val is not 'string' and isNaN(val)
           val = ""
         # console.log 'key=' + key + ' val=' + val
 
@@ -258,7 +258,7 @@ class TimeSeries extends React.Component
    * Inputs table builder. Generates a table of  inputs as matrix
   ###
   build_graph: ->
-    # console.log "TimeSeries::build_graph: entered"
+    console.log "TimeSeries::build_graph: entered"
     if @svgRef?.current
 
       console.log "TimeSeries::build_graph: is current"
