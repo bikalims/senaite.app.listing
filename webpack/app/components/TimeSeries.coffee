@@ -103,13 +103,10 @@ class TimeSeries extends React.Component
   ###
    * Converts the string value to an array
   ###
-  to_matrix: (listString, headers, src) ->
+  to_matrix: (list, headers, src) ->
     # No values yet
-    if listString == undefined or listString == ""
+    if list.length == 0
       return ""
-
-    # Parse the string version of the list of lists into an array
-    list = JSON.parse(listString)
 
     # Map each inner list to an object using the headers
     matrix = list.map (innerList) ->
@@ -130,6 +127,7 @@ class TimeSeries extends React.Component
             else
               console.error 'to_matrix: unknown src ' + src
 
+    console.log 'matrix: ' + JSON.stringify(matrix)
     matrix
 
 
@@ -144,8 +142,10 @@ class TimeSeries extends React.Component
     header_len = headers.length
     # console.log 'build_rows: header len = ' + header_len
     values = @props.item.time_series_values
-    console.log 'build_rows: values = ' + values
-    matrix = @to_matrix(values, headers, 'table')
+    # console.log 'build_rows: values = ' + values
+    # Parse the string version of the list of lists into an array
+    list = JSON.parse(values)
+    matrix = @to_matrix(list, headers, 'table')
 
     # Build the rows
     output = []
@@ -182,11 +182,11 @@ class TimeSeries extends React.Component
       cnt += 1
       # Create list of TDs
       td_elements = []
-      console.log "Row = " + row
+      # console.log "Row = " + row
       for key, value of row
         val = value['val']
         OOR = value['OOR']
-        if typeof val is not 'string' and isNaN(val)
+        if typeof val isnt 'string' and (val is null or isNaN(val))
           val = ""
         # console.log 'key=' + key + ' val=' + val
 
@@ -271,15 +271,21 @@ class TimeSeries extends React.Component
 
       # Get datasets
       columns = @props.item.time_series_columns
-      visible_cols = columns.filter (i) -> i.ColumnHide != 'on'
+      visible_cols = (h for h in columns when h.ColumnHide != 'on')
       if visible_cols.length == 0
         return
       col_types = visible_cols.map (i) -> i.ColumnType
       col_colors = visible_cols.map (i) -> i.ColumnColor
       headers = visible_cols.map (i) -> i.ColumnTitle
+      console.log 'Graph headers: ' + headers
       index = headers[0]
-      # console.log 'Graph raw data: ' + values
-      data = @to_matrix(values, headers, 'graph')
+      console.log 'Graph raw data: ' + values
+      # Parse the string version of the list of lists into an array
+      list = JSON.parse(values)
+      visible_idxs = (i for h, i in columns when h.ColumnHide != 'on')
+      visible_values = list.map (row) ->
+         (row[i] for i in visible_idxs)
+      data = @to_matrix(visible_values, headers, 'graph')
       # console.log 'Graph data: ' + data
 
       # Generate the line colors (exclude index)
@@ -406,9 +412,12 @@ class TimeSeries extends React.Component
           )
 
         # Filter out empty items before generating the lines
-        filteredData = data.filter((d) ->
-          d[index]? and d[key]? and d[index] != "" and d[key] != ""
-        )
+        filteredData = data.filter (d) ->
+          d[index]? and d[key]? and d[index] isnt "" and d[key] isnt "" and \
+          not (typeof d[index] isnt 'string' and (d[index] is null or isNaN(d[index]))) and \
+          not (typeof d[key] isnt 'string' and (d[key] is null or isNaN(d[key])))
+        console.log 'filteredData: ' + JSON.stringify(filteredData)
+
         svg.append("path")
           .datum(filteredData)
           .attr("fill", "none")
