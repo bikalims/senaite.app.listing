@@ -53,7 +53,7 @@ class TimeSeries extends React.Component
       row_values = (input.value.trim() for input in inputs)
       # Filter out empty values
       row_values = row_values.filter (value) -> value isnt ""
-      console.log "TimeSeries::on_change: row num=#{row_cnt} values=#{row_values}"
+      # console.log "TimeSeries::on_change: row num=#{row_cnt} values=#{row_values}"
       if row_values.length > 0
         # Ignore empty rows, probably the last row
         values.push(row_values)
@@ -70,35 +70,6 @@ class TimeSeries extends React.Component
   componentDidMount: ->
     # D3 can only be used after the component has mounted, ensuring the DOM is available
     @build_graph()
-
-  ###
-   * Calculate Y range
-  ###
-  get_Y_range: (minY, maxY) ->
-    # Y-axis
-    diffY = maxY - minY
-    interval = 0
-    if diffY > 70
-      interval = 10
-    else if diffY > 50
-      interval = 5
-    else if diffY > 20
-      interval = 2
-    else if diffY > 5
-      interval = 1
-    else if diffY > 1
-      interval = 0.5
-    else
-      interval = 0.1
-    if interval > 0
-      minTicks = minY - (minY % interval) + interval
-      maxTicks = maxY + (maxY % interval) + interval
-      y_range = d3.range(minTicks, maxTicks, interval)
-    else
-      y_range = d3.range(minY, maxY)
-
-    console.log "Y Axis: min: ", minY, " max: ", maxY, " diffY: ", diffY, " interval: ", interval
-    y_range
 
   ###
    * Converts the string value to an array
@@ -127,7 +98,7 @@ class TimeSeries extends React.Component
             else
               console.error 'to_matrix: unknown src ' + src
 
-    console.log 'matrix: ' + JSON.stringify(matrix)
+    ##  console.log 'matrix: ' + JSON.stringify(matrix)
     matrix
 
 
@@ -137,7 +108,9 @@ class TimeSeries extends React.Component
   build_rows: ->
     # Convert the result to a matrix of rows
     columns = @props.item.time_series_columns
+    # console.log 'columns: ' + columns
     headers = columns.map (i) -> i.ColumnTitle
+    # console.log 'header: ' + headers
     index = headers[0]
     header_len = headers.length
     # console.log 'build_rows: header len = ' + header_len
@@ -258,10 +231,10 @@ class TimeSeries extends React.Component
    * Inputs table builder. Generates a table of  inputs as matrix
   ###
   build_graph: ->
-    console.log "TimeSeries::build_graph: entered"
+    # console.log "TimeSeries::build_graph: entered"
     if @svgRef?.current
 
-      console.log "TimeSeries::build_graph: is current"
+      # console.log "TimeSeries::build_graph: is current"
       values = @state.value
 
       if values == ""
@@ -271,18 +244,33 @@ class TimeSeries extends React.Component
 
       # Get datasets
       columns = @props.item.time_series_columns
-      visible_cols = (h for h in columns when h.ColumnHide != 'on')
+      visible_cols = (c for c in columns when c.ColumnHide != 'on')
       if visible_cols.length == 0
         return
       col_types = visible_cols.map (i) -> i.ColumnType
       col_colors = visible_cols.map (i) -> i.ColumnColor
       headers = visible_cols.map (i) -> i.ColumnTitle
-      console.log 'Graph headers: ' + headers
+      # console.log 'Graph headers: ' + headers
       index = headers[0]
-      console.log 'Graph raw data: ' + values
+      # console.log 'Graph raw data: ' + values
       # Parse the string version of the list of lists into an array
       list = JSON.parse(values)
-      visible_idxs = (i for h, i in columns when h.ColumnHide != 'on')
+      err_col = ""
+      err_key = ""
+      error_columns = (c for c in columns when c.ColumnType == 'errorbar')
+      if error_columns.length == 1
+        err_col = error_columns[0]
+        err_key = error_columns[0].ColumnTitle
+      avg_col = ""
+      avg_key = ""
+      avg_columns = (c for c in columns when c.ColumnType == 'average')
+      if avg_columns.length == 1
+          avg_col = avg_columns[0]
+          avg_key = avg_columns[0].ColumnTitle
+      legend_headers = (c.ColumnTitle for c in columns when c.ColumnHide != 'on' and c.ColumnType != 'errorbar').slice(1)
+
+      # console.log 'Error Key: ' + err_key
+      visible_idxs = (i for c, i in columns when c.ColumnHide != 'on')
       visible_values = list.map (row) ->
          (row[i] for i in visible_idxs)
       data = @to_matrix(visible_values, headers, 'graph')
@@ -303,15 +291,24 @@ class TimeSeries extends React.Component
         .range([0, width])
 
       # Set up Y scale with trimmed domain
-      absoluteMinY = d3.min(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
-      if absoluteMinY > 0
+      maxError = 0
+      if err_key
+        maxError = d3.max(data.flatMap((row) -> parseFloat(row[err_key])))
+
+      # console.log data.flatMap((row) -> legend_headers.map((header) -> parseFloat(row[header])))
+      absoluteMinY = d3.min(data.flatMap((row) -> legend_headers.map((header) -> parseFloat(row[header]))))
+      absoluteMinY -= maxError
+      if absoluteMinY == 0
+        minY = -0.5
+      else if absoluteMinY > 0
         minY = absoluteMinY * 0.95
       else
         minY = absoluteMinY * 1.05
 
-      maxY = d3.max(data.flatMap((row) -> headers.slice(1).map((header) -> parseFloat(row[header]))))
+      maxY = d3.max(data.flatMap((row) -> legend_headers.map((header) -> parseFloat(row[header]))))
+      maxY += maxError
 
-      console.log('minY: ' + minY + ' maxY: ' + maxY + " height: " + height)
+      # console.log('absMinY: ' + absoluteMinY + ' minY: ' + minY + ' maxY: ' + maxY + " height: " + height)
       yScale = d3.scaleLinear()
         .domain([minY, maxY])
         .nice()  # expands domain to "nice" human-friendly values
@@ -331,7 +328,7 @@ class TimeSeries extends React.Component
         .attr("transform", "translate(#{margin.left},#{margin.top})")
 
       # Graph title
-      console.log 'Title: ' + @props.item.time_series_graph_title
+      # console.log 'Title: ' + @props.item.time_series_graph_title
       svg.append("text")
         .attr("x", width / 2)
         .attr("y", -margin.top / 2)
@@ -399,9 +396,10 @@ class TimeSeries extends React.Component
 
       # Draw each line
       headers.slice(1).forEach((key, i) ->
-        console.log('Main loop: ' + key + '  ' + i)
-        console.log('Main loop: ' + col_colors[i+1])
+        # console.log('Main loop: ' + key + '  ' + i)
+        # console.log('Main loop: ' + col_colors[i+1])
         line_config_idx = i % line_configs.length
+
         lineGen = d3.line()
           .curve(curve_val)
           .x((d) ->
@@ -412,31 +410,76 @@ class TimeSeries extends React.Component
           )
 
         # Filter out empty items before generating the lines
+        # console.log 'data: ' + JSON.stringify(data)
         filteredData = data.filter (d) ->
           d[index]? and d[key]? and d[index] isnt "" and d[key] isnt "" and \
           not (typeof d[index] isnt 'string' and (d[index] is null or isNaN(d[index]))) and \
           not (typeof d[key] isnt 'string' and (d[key] is null or isNaN(d[key])))
-        console.log 'filteredData: ' + JSON.stringify(filteredData)
+        # console.log 'filteredData: ' + JSON.stringify(filteredData)
 
-        svg.append("path")
-          .datum(filteredData)
-          .attr("fill", "none")
-          .attr("stroke-width", 2)
-          .attr("stroke", col_colors[i+1])
-          .attr("stroke-dasharray", line_configs[line_config_idx].dash)
-          .attr("d", lineGen)
+        # console.log 'Loop: i= ' + i + ' key=' + key + ' err='+ err_key
+        if key != err_key
+          svg.append("path")
+            .datum(filteredData)
+            .attr("fill", "none")
+            .attr("stroke-width", 2)
+            .attr("stroke", col_colors[i+1])
+            .attr("stroke-dasharray", line_configs[line_config_idx].dash)
+            .attr("d", lineGen)
 
-        # Add data points with different symbols
-        svg.selectAll(".symbol-#{i}")
-          .data(filteredData)
-          .enter().append("path")
-          .attr("class", "symbol symbol-#{i}")
-          .attr("d", symbolGenerator.type(line_configs[line_config_idx].symbol))
-          .attr("transform", (d) ->
-            "translate(#{xScale(parseFloat(d[index]))}, #{yScale(parseFloat(d[key]))})"
-          )
-          .style("fill", col_colors[i+1])
-          .attr("stroke", col_colors[i+1])
+          # Add data points with different symbols
+          svg.selectAll(".symbol-#{i}")
+            .data(filteredData)
+            .enter().append("path")
+            .attr("class", "symbol symbol-#{i}")
+            .attr("d", symbolGenerator.type(line_configs[line_config_idx].symbol))
+            .attr("transform", (d) ->
+              "translate(#{xScale(parseFloat(d[index]))}, #{yScale(parseFloat(d[key]))})"
+            )
+            .style("fill", col_colors[i+1])
+            .attr("stroke", col_colors[i+1])
+        else
+          svg.selectAll(".error-bar")
+            .data(filteredData)
+            .enter()
+            .append("line")
+            .attr("class", "error-bar")
+            .attr "x1", (d) -> xScale(d[index])
+            .attr "x2", (d) -> xScale(d[index])
+            .attr "y1", (d) -> yScale(d[avg_key] - d[err_key])
+            .attr "y2", (d) -> yScale(d[avg_key] + d[err_key])
+            .attr "stroke", avg_col.ColumnColor
+            .attr "stroke-width", 1
+
+          # Caps
+          capWidth = 0.5
+
+          # Top cap
+          svg.selectAll(".error-cap-top")
+            .data(filteredData)
+            .enter()
+            .append("line")
+            .attr("class", "error-cap-top")
+            .attr "x1", (d) -> xScale(d[index] - capWidth/2)
+            .attr "x2", (d) -> xScale(d[index] + capWidth/2)
+            .attr "y1", (d) -> yScale(d[avg_key] + d[err_key])
+            .attr "y2", (d) -> yScale(d[avg_key] + d[err_key])
+            .attr "stroke", avg_col.ColumnColor
+            .attr "stroke-width", 1
+
+          # Bottom cap
+          svg.selectAll(".error-cap-bottom")
+            .data(filteredData)
+            .enter()
+            .append("line")
+            .attr("class", "error-cap-bottom")
+            .attr "x1", (d) -> xScale(d[index] - capWidth/2)
+            .attr "x2", (d) -> xScale(d[index] + capWidth/2)
+            .attr "y1", (d) -> yScale(d[avg_key] - d[err_key])
+            .attr "y2", (d) -> yScale(d[avg_key] - d[err_key])
+            .attr "stroke", avg_col.ColumnColor
+            .attr "stroke-width", 1
+
       )
 
       # Add legend
@@ -446,7 +489,7 @@ class TimeSeries extends React.Component
 
       # Add legend items
       legendItems = legend.selectAll("g")
-        .data(headers.slice(1))
+        .data(legend_headers)
         .enter().append("g")
         .attr("transform", (d, i) ->
           xOffset = (i % Math.floor(width / 100)) * 100  # Horizontal spacing
