@@ -115,8 +115,13 @@ class TimeSeries extends React.Component
     header_len = headers.length
     # console.log 'build_rows: header len = ' + header_len
     values = @props.item.time_series_values
+    if not values
+      console.log "TimeSeries::build_graph: exit because no data"
+      return
+
     # console.log 'build_rows: values = ' + values
     # Parse the string version of the list of lists into an array
+    debugger;
     list = JSON.parse(values)
     matrix = @to_matrix(list, headers, 'table')
 
@@ -237,7 +242,7 @@ class TimeSeries extends React.Component
       # console.log "TimeSeries::build_graph: is current"
       values = @state.value
 
-      if values == ""
+      if not values
         console.log "TimeSeries::build_graph: exit because no data"
         @svgRef.current.appendChild([])
         return
