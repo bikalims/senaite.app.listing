@@ -115,16 +115,6 @@ class TimeSeries extends React.Component
     header_len = headers.length
     # console.log 'build_rows: header len = ' + header_len
     values = @props.item.time_series_values
-    if not values
-      console.log "TimeSeries::build_graph: exit because no data"
-      return
-
-    # console.log 'build_rows: values = ' + values
-    # Parse the string version of the list of lists into an array
-    debugger;
-    list = JSON.parse(values)
-    matrix = @to_matrix(list, headers, 'table')
-
     # Build the rows
     output = []
 
@@ -153,6 +143,15 @@ class TimeSeries extends React.Component
         </tr>
       </thead>
     )
+    if not values
+      console.log "TimeSeries::build_graph: exit because no data"
+      return output
+
+    # console.log 'build_rows: values = ' + values
+    # Parse the string version of the list of lists into an array
+    list = JSON.parse(values)
+    matrix = @to_matrix(list, headers, 'table')
+
     # Create rows on inputs
     row_output = []
     cnt = 0
