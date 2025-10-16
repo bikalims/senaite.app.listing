@@ -271,10 +271,11 @@ class TimeSeries extends React.Component
       if avg_columns.length == 1
           avg_col = avg_columns[0]
           avg_key = avg_columns[0].ColumnTitle
-      legend_headers = (c.ColumnTitle for c in columns when c.ColumnHide != 'on' and c.ColumnType != 'errorbar').slice(1)
+      drawn_lines = ({'idx': i, 'title': c.ColumnTitle; 'color': c.ColumnColor} for c, i in columns when c.ColumnHide != 'on' and c.ColumnType != 'errorbar').slice(1)
 
       # console.log 'Error Key: ' + err_key
       visible_idxs = (i for c, i in columns when c.ColumnHide != 'on')
+      # console.log 'visible_idxs: ' + visible_idxs
       visible_values = list.map (row) ->
          (row[i] for i in visible_idxs)
       data = @to_matrix(visible_values, headers, 'graph')
@@ -299,8 +300,8 @@ class TimeSeries extends React.Component
       if err_key
         maxError = d3.max(data.flatMap((row) -> parseFloat(row[err_key])))
 
-      # console.log data.flatMap((row) -> legend_headers.map((header) -> parseFloat(row[header])))
-      absoluteMinY = d3.min(data.flatMap((row) -> legend_headers.map((header) -> parseFloat(row[header]))))
+      all_values = data.flatMap((row) -> drawn_lines.map((header) -> parseFloat(row[header['title']])))
+      absoluteMinY = d3.min(all_values)
       absoluteMinY -= maxError
       if absoluteMinY == 0
         minY = -0.5
@@ -309,7 +310,7 @@ class TimeSeries extends React.Component
       else
         minY = absoluteMinY * 1.05
 
-      maxY = d3.max(data.flatMap((row) -> legend_headers.map((header) -> parseFloat(row[header]))))
+      maxY = d3.max(all_values)
       maxY += maxError
 
       # console.log('absMinY: ' + absoluteMinY + ' minY: ' + minY + ' maxY: ' + maxY + " height: " + height)
@@ -399,6 +400,7 @@ class TimeSeries extends React.Component
       curve_val = d3[interp]
 
       # Draw each line
+      drawn_line_counter = 0
       headers.slice(1).forEach((key, i) ->
         # console.log('Main loop: ' + key + '  ' + i)
         # console.log('Main loop: ' + col_colors[i+1])
@@ -431,17 +433,21 @@ class TimeSeries extends React.Component
             .attr("stroke-dasharray", line_configs[line_config_idx].dash)
             .attr("d", lineGen)
 
+
+          symbol = line_configs[line_config_idx].symbol
           # Add data points with different symbols
           svg.selectAll(".symbol-#{i}")
             .data(filteredData)
             .enter().append("path")
             .attr("class", "symbol symbol-#{i}")
-            .attr("d", symbolGenerator.type(line_configs[line_config_idx].symbol))
+            .attr("d", symbolGenerator.type(symbol))
             .attr("transform", (d) ->
               "translate(#{xScale(parseFloat(d[index]))}, #{yScale(parseFloat(d[key]))})"
             )
             .style("fill", col_colors[i+1])
             .attr("stroke", col_colors[i+1])
+          drawn_lines[drawn_line_counter]['symbol'] = symbol
+          drawn_line_counter += 1
         else
           svg.selectAll(".error-bar")
             .data(filteredData)
@@ -493,7 +499,7 @@ class TimeSeries extends React.Component
 
       # Add legend items
       legendItems = legend.selectAll("g")
-        .data(legend_headers)
+        .data(drawn_lines)
         .enter().append("g")
         .attr("transform", (d, i) ->
           xOffset = (i % Math.floor(width / 100)) * 100  # Horizontal spacing
@@ -504,11 +510,10 @@ class TimeSeries extends React.Component
       # Add legend color symbols
       legendItems.append("path")
         .attr("d", (d, i) ->
-          line_config_idx = i % line_configs.length
-          d3.symbol().type(line_configs[line_config_idx].symbol).size(100)()
+          d3.symbol().type(d['symbol']).size(100)()
         )
         .attr("transform", "translate(9, 9)")  # Center the symbol within the legend item
-        .style("fill", (d, i) -> col_colors[i+1])
+        .style("fill", (d, i) -> d['color'])
 
       # Add legend text
       legendItems.append("text")
@@ -516,7 +521,7 @@ class TimeSeries extends React.Component
         .attr("y", 9)
         .attr("dy", "0.35em")
         .style("font-size", "12px")
-        .text((d) -> d)
+        .text((d) -> d['title'])
 
 
       console.log "TimeSeries::build_graph: done"
