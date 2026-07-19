@@ -1,6 +1,30 @@
 2.7.0 (unreleased)
 ------------------
 
+- #182 Fix result-variable column order and keep them on column reset
+- #181 Fix "me is undefined" crash in loadModal breaking all listing actions
+- #172 Support AllowManualEntry for select result options
+- #180 Show active column filters as removable chips in the listing toolbar
+- #179 Improve KeywordIndex column filtering: populate autocomplete and AND multiple values
+- #178 Support label chips, click-to-filter, and label-aware saved filters
+- #176 Redesign TableColumnConfig as a searchable popover
+- #177 Refactor TextField to a modern ReactJS Component
+- #174 Add saved filter presets and listing filter refinements
+- #173 Add global "Fetch transitions on select" listing setting
+- #171 Fix TypeError in SearchableSelect when option values are non-string
+- #170 Fix UnicodeEncodeError when column filter values contain non-ASCII
+- #169 Allow per-cell field type override and display value in HiddenField
+- #168 Refactor field props pattern
+- #167 refactor StringField to a modern ReactJS Component
+- #165 refactor ReadonlyField to a modern ReactJS Component
+- #164 Refactor Hiddenfield to a modern ReactJS Component
+- #163 Add Jest testing setup
+- #162 Add fallback for filter index
+- #161 Add column filtering
+- #160 Fix detection limit result is flushed on edit
+- #159 Update sort_order and sort_on according to the review state contentFilter on change
+- #157 Remove confirmation for invalidate transition
+- #158 Fix 2 snapshots created for DX contents on "Save"
 - #156 Update ReactJS 18 -> 19
 - #155 Show modal and context menu loaders
 - #154 Change namespace for listings

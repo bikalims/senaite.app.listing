@@ -1,12 +1,12 @@
 export const ItemTypes = {
-  ROW: "row"
+  ROW: "row",
+  COLUMN: "column",
 }
 
 export const CONFIRM_TRANSITION_IDS = [
     "cancel",
     "close",
     "deactivate",
-    "invalidate",
     "reinstate",
     "reject",
     "remove",

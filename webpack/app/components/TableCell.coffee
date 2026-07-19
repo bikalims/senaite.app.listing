@@ -1,17 +1,17 @@
 import React from "react"
 
 import Checkbox from "./Checkbox.coffee"
-import HiddenField from "./HiddenField.coffee"
+import HiddenField from "./HiddenField"
 import MultiChoice from "./MultiChoice.coffee"
 import MultiSelect from "./MultiSelect.coffee"
 import MultiValue from "./MultiValue.coffee"
 import TimeSeries from "./TimeSeries.coffee"
 import NumericField from "./NumericField.coffee"
 import CalculatedField from "./CalculatedField.coffee"
-import ReadonlyField from "./ReadonlyField.coffee"
+import ReadonlyField from "./ReadonlyField"
 import Select from "./Select.coffee"
-import StringField from "./StringField.coffee"
-import TextField from "./TextField.coffee"
+import StringField from "./StringField"
+import TextField from "./TextField.js"
 import FractionField from "./FractionField.coffee"
 import DateTime from "./DateTime.coffee"
 
@@ -224,6 +224,11 @@ class TableCell extends React.Component
     column_key = @get_column_key()
     item = @get_item()
 
+    # per-item field type override (e.g. {"Uncertainty": "hidden"})
+    field_types = item.field_types or {}
+    if column_key of field_types
+      return field_types[column_key]
+
     # true if the field is editable
     editable = @is_edit_allowed()
     resultfield = @is_result_column()
@@ -376,15 +381,23 @@ class TableCell extends React.Component
     item = props.item or @get_item()
     name = props.name or @get_name()
     value = props.value or @get_value()
+    formatted_value = props.formatted_value or @get_formatted_value()
     uid = props.uid or @get_uid()
     title = props.title or @props.column.title or column_key
+
+    # Use the records converter so the submitted value is folded into
+    # request.form[column_key] as a records dict keyed by uid, matching
+    # the convention used by the editable field components
+    converter = @ZPUBLISHER_CONVERTER["default"]
+    fieldname = name + converter
 
     return (
       <HiddenField
         key={name + "_hidden"}
         uid={uid}
-        name={name}
+        name={fieldname}
         value={value}
+        formatted_value={formatted_value}
         column_key={column_key}
         {...props}
         />)
@@ -1044,6 +1057,8 @@ class TableCell extends React.Component
 
     if type == "readonly"
       field = field.concat @create_readonly_field()
+    else if type == "hidden"
+      field = field.concat @create_hidden_field()
     else if type == "calculated"
       field = field.concat @create_calculated_field()
     else if type in ["select", "choices"]
